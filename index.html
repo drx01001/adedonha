@@ -125,10 +125,10 @@ td.n{text-align:right}
 .tampo .t2{font-family:var(--display);font-size:clamp(1rem,5vw,1.5rem);font-weight:700;line-height:1.1;word-break:break-word;animation:entra .35s ease-out}
 .tampo .t3{font-size:.8rem;color:#c9cbff;font-weight:600}
 .assentos{position:absolute;inset:0;transition:transform .7s cubic-bezier(.4,0,.2,1)}
-.assento{position:absolute;left:50%;top:50%;width:62px;height:62px;margin:-31px 0 0 -31px}
+.assento{position:absolute;left:50%;top:50%;width:var(--tam,62px);height:var(--tam,62px);margin:calc(var(--tam,62px) / -2) 0 0 calc(var(--tam,62px) / -2)}
 .assento .up{width:100%;height:100%;display:flex;flex-direction:column;align-items:center;transition:transform .7s cubic-bezier(.4,0,.2,1)}
-.assento .av{width:54px;height:60px;transition:transform .3s,filter .3s}
-.assento .nm{font-size:.65rem;font-weight:800;background:#000a;padding:0 .4rem;border-radius:6px;white-space:nowrap;margin-top:-6px}
+.assento .av{width:calc(var(--tam,62px) * .87);height:calc(var(--tam,62px) * .97);transition:transform .3s,filter .3s}
+.assento .nm{font-size:max(.5rem,calc(var(--tam,62px) * .17));font-weight:800;background:#000a;padding:0 .4rem;border-radius:6px;white-space:nowrap;margin-top:-6px;max-width:calc(var(--tam,62px) * 1.6);overflow:hidden;text-overflow:ellipsis}
 .assento.ativo .av{transform:scale(1.35);filter:drop-shadow(0 0 10px var(--warn))}
 .assento.off{opacity:.4}
 .assento.vazio .av{opacity:.25}
@@ -214,6 +214,13 @@ td.n{text-align:right}
         <div>
           <label for="cfg-rodadas">Rodadas</label>
           <select id="cfg-rodadas"></select>
+        </div>
+        <div>
+          <label for="cfg-stops">Quantos STOPs encerram a rodada</label>
+          <select id="cfg-stops">
+            <option value="2" selected>Dois jogadores</option>
+            <option value="1">Um já basta</option>
+          </select>
         </div>
         <div>
           <label for="cfg-stop">Quando pode dar STOP</label>
@@ -326,6 +333,11 @@ const FRASES = {
     'Letra {L}! O relógio não tem dó e os amigos muito menos.',
     'Letra {L}. Boa sorte, você vai precisar.',
     'Letra {L}. Se travar, inventa com confiança.',
+  ],
+  stopParcial: [
+    '{N} deu STOP! Falta mais um corajoso pra fechar a rodada.',
+    '{N} já apertou STOP. Quem acompanha?',
+    'STOP de {N}. Ainda não acabou: precisa de mais um.',
   ],
   stop: [
     '{N} apertou STOP e deixou geral no vácuo.',
@@ -474,16 +486,18 @@ function renderMesa(id, ativo, centro) {
   tampo.querySelector('.t3').textContent = centro.t3 || '';
 
   const lugares = estado.jogadores.slice();
-  while (centro.vazios && lugares.length < centro.vazios) lugares.push(null);
+  if (lugares.length === 1) lugares.push(null); // uma cadeira vaga só para lembrar de convidar
   const n = Math.max(1, lugares.length);
-  const R = Math.max(120, (mesa.clientWidth || 340) * 0.40);
+  const R = Math.max(120, (mesa.clientWidth || 340) * 0.41);
+  const tam = Math.round(Math.max(34, Math.min(62, (2 * Math.PI * R / n) * 0.78)));
+  mesa.style.setProperty('--tam', tam + 'px');
   let rot = Number(mesa.dataset.rot) || 0;
   const frente = ativo >= 0 ? ativo : (centro.frente ?? -1);
   if (frente >= 0) { const alvo = 180 - frente * 360 / n; const delta = ((alvo - rot) % 360 + 540) % 360 - 180; rot += delta; }
   mesa.dataset.rot = String(rot);
   const assentos = mesa.querySelector('.assentos');
   assentos.style.transform = 'rotate(' + rot + 'deg)';
-  const chave = lugares.map(j => j ? j.id + (j.av ? j.av.f + j.av.c : '') + (j.conectado ? 1 : 0) : '-').join('|') + '|' + ativo + '|' + R;
+  const chave = lugares.map(j => j ? j.id + (j.av ? j.av.f + j.av.c : '') + (j.conectado ? 1 : 0) : '-').join('|') + '|' + ativo + '|' + R + '|' + tam;
   if (assentos.dataset.chave !== chave) {
     assentos.dataset.chave = chave; assentos.innerHTML = '';
     lugares.forEach((j, i) => {
@@ -493,7 +507,7 @@ function renderMesa(id, ativo, centro) {
       s.style.transform = 'rotate(' + a + 'deg) translateY(' + (-R) + 'px) rotate(' + (-a) + 'deg)';
       const up = document.createElement('div'); up.className = 'up';
       up.appendChild(elAvatar(j ? j.av : { f: 'pirata', c: '#555' }));
-      const nm = document.createElement('div'); nm.className = 'nm'; nm.textContent = j ? j.nome : 'vago';
+      const nm = document.createElement('div'); nm.className = 'nm'; nm.textContent = j ? j.nome : 'convide!';
       up.appendChild(nm); s.appendChild(up); assentos.appendChild(s);
     });
   }
@@ -597,7 +611,7 @@ function receberDoCliente(c, m) {
     const av = validarAvatar(m.av);
     if (existente) { existente.conectado = true; existente.nome = m.nome; existente.av = av; }
     else if (estado.fase !== 'lobby') { c.send({ t: 'recusado', motivo: 'A partida já começou. Espere a próxima.' }); setTimeout(() => c.close(), 500); return; }
-    else if (estado.jogadores.length >= 12) { c.send({ t: 'recusado', motivo: 'A sala está cheia (12 jogadores).' }); setTimeout(() => c.close(), 500); return; }
+    else if (estado.jogadores.length >= 30) { c.send({ t: 'recusado', motivo: 'A sala está lotada (30 jogadores). Abram outra mesa!' }); setTimeout(() => c.close(), 500); return; }
     else estado.jogadores.push({ id: pid, nome: String(m.nome || 'Alguém').slice(0, 18), conectado: true, av });
     conns.set(pid, c);
     estado.comentario = estado.fase === 'lobby' ? (m.nome + ' chegou. ' + frase('lobby')) : estado.comentario;
@@ -607,7 +621,16 @@ function receberDoCliente(c, m) {
   if (!estado.jogadores.some(x => x.id === pid)) return;
   if (m.t === 'respostas' && estado.fase === 'rodada' && m.rodada === estado.rodada) { estado.respostas[pid] = sanear(m.r); return; }
   if (m.t === 'respostas' && estado.fase === 'coletando' && m.rodada === estado.rodada) { estado.respostas[pid] = sanear(m.r); return; }
-  if (m.t === 'stop' && estado.fase === 'rodada') { pararRodada(pid, false); return; }
+  if (m.t === 'stop' && estado.fase === 'rodada') {
+    if (estado.stops.includes(pid)) return;
+    estado.stops.push(pid);
+    const precisa = Math.min(estado.config.stops || 1, estado.jogadores.filter(j => j.conectado).length);
+    if (estado.stops.length >= precisa) { pararRodada(pid, false); return; }
+    const j = estado.jogadores.find(x => x.id === pid);
+    estado.comentario = frase('stopParcial', { N: j ? j.nome : 'Alguém' });
+    transmitir();
+    return;
+  }
   if (m.t === 'marcar' && estado.fase === 'conferencia' && m.rodada === estado.rodada) { alternarMarca(pid, m.alvo, m.cat); transmitir(); return; }
   if (m.t === 'pronto' && estado.fase === 'conferencia') { if (!estado.prontos.includes(pid)) estado.prontos.push(pid); transmitir(); return; }
 }
@@ -638,7 +661,8 @@ function enviarAoHost(m) {
 function estadoInicial(codigo) {
   return {
     codigo, hostId: meuId, fase: 'lobby', jogadores: [],
-    config: { tempo: 120, rodadas: 5, stop: 'cheio' },
+    config: { tempo: 120, rodadas: 5, stop: 'cheio', stops: 2 },
+    stops: [],
     categorias: CATEGORIAS_PADRAO.slice(),
     letrasUsadas: [], rodada: 0, letra: null,
     respostas: {}, marcas: {}, prontos: [], paradoPor: null, porTempo: false,
@@ -650,7 +674,7 @@ function lerConfig() {
   const cats = $('cfg-categorias').value.split('\n').map(s => s.trim()).filter(Boolean).slice(0, 30);
   if (cats.length < 3) { toast('Precisa de pelo menos 3 categorias.'); return false; }
   estado.categorias = cats;
-  estado.config = { tempo: Number($('cfg-tempo').value), rodadas: Number($('cfg-rodadas').value), stop: $('cfg-stop').value };
+  estado.config = { tempo: Number($('cfg-tempo').value), rodadas: Number($('cfg-rodadas').value), stop: $('cfg-stop').value, stops: Number($('cfg-stops').value) };
   return true;
 }
 
@@ -668,7 +692,7 @@ function iniciarRodada() {
   estado.letra = sortear(disponiveis);
   estado.letrasUsadas.push(estado.letra);
   estado.fase = 'rodada';
-  estado.respostas = {}; estado.marcas = {}; estado.prontos = []; estado.paradoPor = null; estado.porTempo = false;
+  estado.respostas = {}; estado.marcas = {}; estado.prontos = []; estado.paradoPor = null; estado.porTempo = false; estado.stops = [];
   estado.comentario = frase('letra', { L: estado.letra });
   restanteLocal = estado.config.tempo || null;
   clearInterval(tickTimer);
@@ -722,7 +746,8 @@ function avancarRev() {
   if (!passo) { terminarRev(); return; }
   if (passo.fechar) estado.comentario = comentarioCategoria(passo.ci);
   transmitir();
-  const base = passo.fechar ? 1300 : 1100;
+  const muitos = estado.jogadores.length >= 6; // mesa cheia anda um pouco mais rápido
+  const base = passo.fechar ? (muitos ? 1100 : 1300) : (muitos ? 850 : 1100);
   agendarRev(estado.rev.veloz ? base / 2.5 : base);
 }
 function terminarRev() {
@@ -879,7 +904,7 @@ function renderLobby() {
   $('lobby-codigo').textContent = estado.codigo;
   $('lobby-eu').textContent = meuNome;
   $('lobby-comentario').textContent = estado.comentario;
-  renderMesa('lobby-mesa', -1, { t1: 'Sala', t2: estado.codigo, t3: estado.jogadores.length + ' na mesa', vazios: 4, frente: estado.jogadores.findIndex(j => j.id === meuId) });
+  renderMesa('lobby-mesa', -1, { t1: 'Sala', t2: estado.codigo, t3: estado.jogadores.length + ' na mesa', frente: estado.jogadores.findIndex(j => j.id === meuId) });
   const lj = $('lobby-jogadores'); lj.innerHTML = '';
   estado.jogadores.forEach(j => lj.appendChild(chipJogador(j)));
   const link = location.origin + location.pathname + '?sala=' + estado.codigo;
@@ -889,7 +914,7 @@ function renderLobby() {
   $('lobby-espera').hidden = souHost;
   if (!souHost) {
     const c = estado.config;
-    $('lobby-regras').textContent = (c.tempo ? 'Tempo: ' + (c.tempo / 60) + ' min por rodada. ' : 'Sem tempo: a rodada acaba quando alguém dá STOP. ') + c.rodadas + ' rodadas. ' + estado.categorias.length + ' categorias.';
+    $('lobby-regras').textContent = (c.tempo ? 'Tempo: ' + (c.tempo / 60) + ' min por rodada. ' : 'Sem tempo. ') + 'A rodada encerra com ' + (c.stops === 1 ? 'um STOP. ' : 'dois STOPs. ') + c.rodadas + ' rodadas. ' + estado.categorias.length + ' categorias.';
   }
   $('lobby-aviso').textContent = estado.jogadores.length < 2 ? 'Dá para começar sozinho, mas é mais divertido com amigos.' : '';
 }
@@ -917,7 +942,7 @@ function montarCampos() {
 function renderProgresso() {
   const n = minhasRespostas.filter(r => r.trim()).length;
   $('rd-progresso').textContent = n;
-  if (estado.fase === 'rodada' && estado.config.stop === 'cheio') $('btn-stop').disabled = n < estado.categorias.length;
+  if (estado.fase === 'rodada' && estado.config.stop === 'cheio') $('btn-stop').disabled = n < estado.categorias.length || (estado.stops || []).includes(meuId);
 }
 function renderTimer() {
   const el = $('rd-timer');
@@ -940,12 +965,20 @@ function renderRodada() {
   $('rd-comentario').textContent = estado.comentario;
   $('btn-forcar').hidden = !souHost || estado.fase !== 'rodada';
   renderTimer();
+  const stops = estado.stops || [];
+  const precisa = Math.min(estado.config.stops || 1, estado.jogadores.filter(j => j.conectado).length);
   if (estado.fase === 'coletando') {
-    $('btn-stop').disabled = true;
+    $('btn-stop').disabled = true; $('btn-stop').textContent = 'STOP!';
     $('rd-aviso').textContent = 'Rodada encerrada! Recolhendo as respostas…';
     document.querySelectorAll('#rd-form input').forEach(i => { i.disabled = true; });
+  } else if (stops.includes(meuId)) {
+    $('btn-stop').disabled = true; $('btn-stop').textContent = 'STOP dado (' + stops.length + '/' + precisa + ')';
+    $('rd-aviso').textContent = 'Você já deu STOP. Falta mais ' + (precisa - stops.length) + ' pessoa para encerrar.';
   } else {
-    $('rd-aviso').textContent = estado.config.stop === 'cheio' ? 'O STOP libera quando você preencher tudo.' : 'Pode dar STOP quando quiser. Coragem.';
+    $('btn-stop').textContent = stops.length ? 'STOP! (' + stops.length + '/' + precisa + ')' : 'STOP!';
+    const quem = stops.map(id => (estado.jogadores.find(j => j.id === id) || {}).nome).filter(Boolean).join(', ');
+    $('rd-aviso').textContent = stops.length ? quem + ' já deu STOP. Falta ' + (precisa - stops.length) + ' para encerrar.' :
+      (precisa > 1 ? 'A rodada só acaba quando ' + precisa + ' pessoas derem STOP. ' : '') + (estado.config.stop === 'cheio' ? 'O STOP libera quando você preencher tudo.' : 'Pode dar STOP quando quiser. Coragem.');
   }
 }
 
