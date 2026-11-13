@@ -139,6 +139,25 @@ td.n{text-align:right}
 .assento.vazio .av{opacity:.25}
 @media (prefers-reduced-motion:reduce){.assentos,.assento .up,.tampo .t2{transition:none;animation:none}}
 .rank .av{width:40px;height:44px}
+/* Contagem regressiva e bomba */
+body.alerta .topbar{animation:alerta 1s infinite}
+@keyframes alerta{0%,100%{background:var(--bg)}50%{background:#4a1520}}
+.contagem{position:fixed;inset:0;display:grid;place-items:center;pointer-events:none;z-index:8}
+.contagem span{font-family:var(--display);font-size:clamp(6rem,30vw,14rem);font-weight:700;color:var(--stop);opacity:.35;text-shadow:0 0 40px rgba(255,107,87,.6);animation:pop 1s ease-out}
+@keyframes pop{0%{transform:scale(1.6);opacity:.7}100%{transform:scale(1);opacity:.35}}
+.bomba{position:fixed;inset:0;z-index:40;display:grid;place-items:center;background:rgba(20,21,42,.7);overflow:hidden}
+.bomba svg{width:min(50vw,220px);height:auto;animation:treme .12s infinite,cresce 1.4s ease-in forwards}
+@keyframes treme{0%{transform:translate(-2px,1px) rotate(-2deg)}50%{transform:translate(2px,-1px) rotate(2deg)}100%{transform:translate(-1px,2px) rotate(0)}}
+@keyframes cresce{0%{scale:.6}80%{scale:1.1}100%{scale:1.2}}
+.bomba .bum{position:absolute;inset:0;display:grid;place-items:center;font-family:var(--display);font-size:clamp(4rem,20vw,9rem);font-weight:700;color:#fff;background:radial-gradient(circle,#ffb347,#ff6b57 40%,transparent 70%);opacity:0;animation:bum .6s ease-out 1.4s forwards}
+@keyframes bum{0%{opacity:0;transform:scale(.3)}40%{opacity:1;transform:scale(1.15)}100%{opacity:1;transform:scale(1)}}
+body.estourou{animation:chacoalha .5s 1.4s}
+@keyframes chacoalha{0%,100%{transform:translate(0)}20%{transform:translate(-8px,4px)}40%{transform:translate(8px,-4px)}60%{transform:translate(-6px,-2px)}80%{transform:translate(6px,2px)}}
+.falar{display:flex;justify-content:center;margin-top:.2rem}
+.falar button{font-family:var(--display);font-size:1.2rem;padding:.9rem 1.6rem;background:var(--warn);color:#2a1d00;border-radius:16px;box-shadow:0 8px 28px rgba(251,191,36,.35);animation:pulsa 1.2s infinite;max-width:100%;white-space:normal}
+@keyframes pulsa{50%{transform:scale(1.04)}}
+@media (prefers-reduced-motion:reduce){body.alerta .topbar,.contagem span,.bomba svg,.bomba .bum,body.estourou,.falar button{animation:none}.bomba .bum{opacity:1}}
+
 /* Chat */
 .balao{position:fixed;right:calc(14px + env(safe-area-inset-right,0px));bottom:calc(14px + env(safe-area-inset-bottom,0px));width:52px;height:52px;border-radius:50%;background:var(--accent);box-shadow:0 6px 20px rgba(0,0,0,.4);display:grid;place-items:center;padding:0;z-index:30}
 .balao svg{width:26px;height:26px}
@@ -307,10 +326,13 @@ td.n{text-align:right}
         <h2>Assembleia <span id="cf-num"></span> · letra <span id="cf-letra"></span></h2>
       </div>
       <div class="mesa" id="cf-mesa"></div>
+      <div class="falar" id="cf-falar" hidden><button type="button" id="btn-falar">Falar</button></div>
       <div id="cf-comentario" class="comment"></div>
       <div class="row" id="cf-controles" hidden>
+        <button id="btn-voltar" class="ghost small">◀ Voltar</button>
+        <button id="btn-pular-um" class="ghost small">Pular ▶</button>
         <button id="btn-veloz" class="ghost small">Mais rápido</button>
-        <button id="btn-pular" class="ghost small">Pular revelação</button>
+        <button id="btn-pular" class="ghost small">Pular tudo</button>
       </div>
       <div class="legend"><span>Única: +10. Repetida: +5. Em branco, letra errada ou invalidada: 0.</span><span>Acento e cedilha não mudam a palavra.</span><span>Toque numa resposta dos outros para marcar como inválida.</span></div>
       <div class="review" id="cf-lista"></div>
@@ -344,6 +366,19 @@ td.n{text-align:right}
   <div id="desconectado" class="card err" hidden></div>
 </div>
 <div id="toast" class="toast" hidden></div>
+<div id="contagem" class="contagem" hidden><span id="contagem-n">10</span></div>
+<div id="bomba" class="bomba" hidden>
+  <svg viewBox="0 0 120 130" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <path d="M78 30 Q90 10 108 14" stroke="#c9a66b" stroke-width="5" fill="none" stroke-linecap="round"/>
+    <circle cx="108" cy="14" r="7" fill="#ffb347"><animate attributeName="r" values="5;9;5" dur=".3s" repeatCount="indefinite"/></circle>
+    <circle cx="108" cy="14" r="3" fill="#fff"/>
+    <rect x="62" y="24" width="22" height="16" rx="4" fill="#555"/>
+    <circle cx="60" cy="80" r="46" fill="#1f2033" stroke="#000" stroke-width="3"/>
+    <ellipse cx="44" cy="62" rx="12" ry="8" fill="#fff" opacity=".18"/>
+    <text x="60" y="92" text-anchor="middle" font-family="Fredoka, sans-serif" font-weight="700" font-size="30" fill="#ff6b57">STOP</text>
+  </svg>
+  <div class="bum">BUM!</div>
+</div>
 
 <button id="balao" class="balao" hidden aria-label="Abrir chat">
   <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-8 8H8l-5 3 1.2-4.2A8 8 0 1 1 21 12z"/></svg>
@@ -683,6 +718,11 @@ function receberDoCliente(c, m) {
   }
   if (m.t === 'marcar' && estado.fase === 'conferencia' && m.rodada === estado.rodada) { alternarMarca(pid, m.alvo, m.cat); transmitir(); return; }
   if (m.t === 'pronto' && estado.fase === 'conferencia') { if (!estado.prontos.includes(pid)) estado.prontos.push(pid); transmitir(); return; }
+  if (m.t === 'falar' && estado.fase === 'conferencia' && estado.rev && m.i === estado.rev.i) {
+    const passo = sequenciaRev(estado)[estado.rev.i];
+    if (passo && !passo.fechar && estado.jogadores[passo.pi] && estado.jogadores[passo.pi].id === pid) falarRev();
+    return;
+  }
   if (m.t === 'chat') {
     const texto = String(m.texto || '').trim().slice(0, 200); if (!texto) return;
     const j = estado.jogadores.find(x => x.id === pid);
@@ -802,7 +842,7 @@ function pararRodada(pid, porTempo) {
   for (const c of conns.values()) { try { c.send({ t: 'coletar' }); } catch (e) {} }
   enviarRespostas(true); // as do próprio anfitrião
   transmitir();
-  setTimeout(abrirConferencia, 1500);
+  setTimeout(abrirConferencia, porTempo ? 2700 : 1500);
 }
 
 function abrirConferencia() {
@@ -824,18 +864,50 @@ function sequenciaRev(e) {
   return seq;
 }
 let revTimer = null;
-function agendarRev(ms) { clearTimeout(revTimer); revTimer = setTimeout(avancarRev, ms); }
+function agendarRev(ms) { clearTimeout(revTimer); revTimer = setTimeout(() => avancarRevOuFalar(), ms); }
 function avancarRev() {
   if (!souHost || !estado || estado.fase !== 'conferencia' || estado.rev.fim) return;
   const seq = sequenciaRev(estado);
   estado.rev.i += 1;
   const passo = seq[estado.rev.i];
   if (!passo) { terminarRev(); return; }
-  if (passo.fechar) estado.comentario = comentarioCategoria(passo.ci);
+  estado.rev.falou = false; estado.rev.pausa = false;
+  if (passo.fechar) { estado.comentario = comentarioCategoria(passo.ci); transmitir(); agendarRev(estado.rev.veloz ? 400 : 900); return; }
+  // Vez do jogador falar: ele toca na própria resposta. Se demorar, a mesa fala por ele.
+  const j = estado.jogadores[passo.pi];
+  if (j && j.conectado) { transmitir(); agendarRev(estado.rev.veloz ? 3000 : 8000); }
+  else falarRev();
+}
+function falarRev() {
+  if (!souHost || !estado || estado.fase !== 'conferencia' || estado.rev.fim || estado.rev.falou) return;
+  const passo = sequenciaRev(estado)[estado.rev.i];
+  if (!passo || passo.fechar) return;
+  estado.rev.falou = true; estado.rev.pausa = false;
   transmitir();
-  const muitos = estado.jogadores.length >= 6; // mesa cheia anda um pouco mais rápido
-  const base = passo.fechar ? (muitos ? 1100 : 1300) : (muitos ? 850 : 1100);
-  agendarRev(estado.rev.veloz ? base / 2.5 : base);
+  agendarRev(estado.rev.veloz ? 200 : 350); // falou, já passa para o próximo
+}
+function pularRev() {
+  if (!souHost || !estado || estado.fase !== 'conferencia' || estado.rev.fim) return;
+  clearTimeout(revTimer); estado.rev.falou = true; estado.rev.pausa = false;
+  avancarRevOriginal();
+}
+function voltarRev() {
+  if (!souHost || !estado || estado.fase !== 'conferencia' || estado.rev.fim) return;
+  const seq = sequenciaRev(estado);
+  let i = estado.rev.i - 1; while (i >= 0 && seq[i].fechar) i--;
+  if (i < 0) return;
+  clearTimeout(revTimer);
+  estado.rev.i = i; estado.rev.falou = true; estado.rev.pausa = true; // fica parado até o anfitrião pular
+  transmitir();
+}
+// Quando o tempo de fala esgota, o timer chama avancarRev; se o jogador ainda não falou, a mesa fala por ele antes
+const avancarRevOriginal = avancarRev;
+function avancarRevOuFalar() {
+  if (estado && estado.fase === 'conferencia' && estado.rev && !estado.rev.fim && !estado.rev.falou) {
+    const passo = sequenciaRev(estado)[estado.rev.i];
+    if (passo && !passo.fechar) { falarRev(); return; }
+  }
+  avancarRevOriginal();
 }
 function terminarRev() {
   clearTimeout(revTimer);
@@ -846,6 +918,8 @@ function terminarRev() {
 }
 $('btn-veloz').addEventListener('click', () => { if (souHost && estado.rev) { estado.rev.veloz = !estado.rev.veloz; transmitir(); } });
 $('btn-pular').addEventListener('click', () => { if (souHost && estado.rev && !estado.rev.fim) terminarRev(); });
+$('btn-pular-um').addEventListener('click', pularRev);
+$('btn-voltar').addEventListener('click', voltarRev);
 
 function pontosResposta(pid, ci, e = estado) {
   if (respostaInvalida(pid, ci, e)) return 0;
@@ -1033,12 +1107,28 @@ function renderProgresso() {
   $('rd-progresso').textContent = n;
   if (estado.fase === 'rodada' && estado.config.stop === 'cheio') $('btn-stop').disabled = n < estado.categorias.length || (estado.stops || []).includes(meuId);
 }
+let contagemUltima = -1;
 function renderTimer() {
   const el = $('rd-timer');
-  if (!estado || !estado.config.tempo) { el.textContent = '∞'; el.classList.remove('low'); return; }
+  if (!estado || !estado.config.tempo) { el.textContent = '∞'; el.classList.remove('low'); alertaTempo(false, 0); return; }
   const r = Math.max(0, restanteLocal ?? estado.config.tempo);
   el.textContent = Math.floor(r / 60) + ':' + String(r % 60).padStart(2, '0');
   el.classList.toggle('low', r <= 10);
+  alertaTempo(estado.fase === 'rodada' && r <= 10 && r > 0, r);
+}
+function alertaTempo(ligado, r) {
+  document.body.classList.toggle('alerta', ligado);
+  const c = $('contagem'); c.hidden = !ligado;
+  if (ligado && contagemUltima !== r) { contagemUltima = r; const n = $('contagem-n'); n.textContent = r; n.style.animation = 'none'; void n.offsetWidth; n.style.animation = ''; }
+  if (!ligado) contagemUltima = -1;
+}
+let bombaRodada = -1;
+function explodirBomba() {
+  if (bombaRodada === estado.rodada) return;
+  bombaRodada = estado.rodada;
+  alertaTempo(false, 0);
+  $('bomba').hidden = false; document.body.classList.add('estourou');
+  setTimeout(() => { $('bomba').hidden = true; document.body.classList.remove('estourou'); }, 2600);
 }
 
 function renderRodada() {
@@ -1057,6 +1147,7 @@ function renderRodada() {
   const stops = estado.stops || [];
   const precisa = Math.min(estado.config.stops || 1, estado.jogadores.filter(j => j.conectado).length);
   if (estado.fase === 'coletando') {
+    if (estado.porTempo) explodirBomba(); else alertaTempo(false, 0);
     $('btn-stop').disabled = true; $('btn-stop').textContent = 'STOP!';
     $('rd-aviso').textContent = 'Rodada encerrada! Recolhendo as respostas…';
     document.querySelectorAll('#rd-form input').forEach(i => { i.disabled = true; });
@@ -1085,17 +1176,29 @@ function renderConferencia() {
   const seq = sequenciaRev(estado);
   const atual = rev.fim ? null : seq[rev.i];
   const catMax = rev.fim ? estado.categorias.length - 1 : (atual ? atual.ci : -1);
-  const revelada = (ci, pi) => rev.fim || ci < catMax || (ci === catMax && atual && !atual.fechar && pi <= atual.pi) || (ci === catMax && atual && atual.fechar);
+  const revelada = (ci, pi) => rev.fim || ci < catMax || (ci === catMax && atual && !atual.fechar && (pi < atual.pi || (pi === atual.pi && rev.falou))) || (ci === catMax && atual && atual.fechar);
   const fechada = (ci) => rev.fim || ci < catMax || (ci === catMax && atual && atual.fechar);
 
   // Mesa girando: quem está "falando" vem para a frente
   if (rev.fim) renderMesa('cf-mesa', -1, { t1: 'Letra ' + estado.letra, t2: 'Rodada conferida', t3: 'Marque o que não vale' });
   else if (!atual) renderMesa('cf-mesa', -1, { t1: 'Letra ' + estado.letra, t2: 'Recolhendo as folhas…', t3: '' });
   else if (atual.fechar) renderMesa('cf-mesa', -1, { t1: estado.categorias[atual.ci], t2: 'Fechou!', t3: 'pontos na mesa' });
-  else {
+  else if (!rev.falou) {
+    const j = estado.jogadores[atual.pi]; const minhaVez = j.id === meuId;
+    renderMesa('cf-mesa', atual.pi, { t1: estado.categorias[atual.ci], t2: minhaVez ? 'Sua vez!' : 'Vez de ' + j.nome, t3: minhaVez ? 'toque na sua resposta' : 'esperando falar…' });
+  } else {
     const j = estado.jogadores[atual.pi]; const r = (estado.respostas[j.id] || [])[atual.ci] || '';
     const inval = respostaInvalida(j.id, atual.ci);
-    renderMesa('cf-mesa', atual.pi, { t1: estado.categorias[atual.ci], t2: r.trim() ? r : 'em branco', t3: j.nome + (inval === 'letra' ? ' (não começa com ' + estado.letra + ')' : '') });
+    renderMesa('cf-mesa', atual.pi, { t1: estado.categorias[atual.ci], t2: r.trim() ? r : 'em branco', t3: j.nome + (inval === 'letra' ? ' (não começa com ' + estado.letra + ')' : '') + (rev.pausa ? ' · pausado' : '') });
+  }
+  $('btn-voltar').disabled = !atual || rev.i <= 0;
+  // Botão para falar a própria resposta
+  const minhaVezAgora = atual && !atual.fechar && !rev.falou && estado.jogadores[atual.pi] && estado.jogadores[atual.pi].id === meuId;
+  $('cf-falar').hidden = !minhaVezAgora;
+  if (minhaVezAgora) {
+    const r = ((estado.respostas[meuId] || [])[atual.ci] || '').trim();
+    $('btn-falar').textContent = r ? r : 'Passo, deixei em branco';
+    $('btn-falar').onclick = () => { enviarAoHost({ t: 'falar', i: rev.i }); $('cf-falar').hidden = true; };
   }
   $('cf-controles').hidden = !souHost || rev.fim;
   $('btn-veloz').textContent = rev.veloz ? 'Velocidade normal' : 'Mais rápido';
