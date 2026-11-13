@@ -82,6 +82,18 @@ textarea{min-height:200px;resize:vertical;font-size:.9rem}
 .ans button.mine{border-style:dashed}
 .ans button .flags{background:var(--bad);color:#fff;border-radius:999px;font-size:.7rem;padding:0 .4rem}
 .legend{display:flex;flex-wrap:wrap;gap:.8rem;font-size:.8rem;color:var(--muted)}
+.ans button .pts{border-radius:999px;font-size:.75rem;padding:0 .45rem;font-weight:800;background:var(--ok);color:#0b2e18}
+.ans button .pts.meio{background:var(--warn);color:#3b2a00}
+.ans button .pts.zero{background:var(--bad);color:#fff}
+.ans button.revelando{outline:3px solid var(--warn);outline-offset:1px}
+.cat.atual{border:1px solid var(--accent)}
+.cat.fechada h3::after{content:" · fechada";color:var(--ok)}
+.spot{background:linear-gradient(135deg,#2a2c5a,#3b3d7a);border-radius:16px;padding:1rem 1.2rem;min-height:4.6rem;display:flex;flex-direction:column;gap:.2rem;justify-content:center}
+.spot .quem{font-size:.85rem;color:#c9cbff;font-weight:600}
+.spot .oque{font-family:var(--display);font-size:1.5rem;font-weight:700;animation:entra .35s ease-out}
+.spot .oque .p{color:var(--warn);margin-left:.4rem;font-size:1.1rem}
+@keyframes entra{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.spot .oque{animation:none}}
 
 /* Final */
 .rank{display:flex;flex-direction:column;gap:.6rem}
@@ -214,13 +226,18 @@ td.n{text-align:right}
       <div class="row" style="justify-content:space-between">
         <h2>Rodada <span id="cf-num"></span> · letra <span id="cf-letra"></span></h2>
       </div>
+      <div class="spot" id="cf-spot"><div class="quem" id="cf-spot-quem"></div><div class="oque" id="cf-spot-oque"></div></div>
       <div id="cf-comentario" class="comment"></div>
-      <div class="legend"><span>Toque numa resposta dos outros para marcar como inválida.</span><span>Riscado = não vale.</span><span>Tracejado = sua resposta.</span></div>
+      <div class="row" id="cf-controles" hidden>
+        <button id="btn-veloz" class="ghost small">Mais rápido</button>
+        <button id="btn-pular" class="ghost small">Pular revelação</button>
+      </div>
+      <div class="legend"><span>Única: +10. Repetida: +5. Em branco, letra errada ou invalidada: 0.</span><span>Acento e cedilha não mudam a palavra.</span><span>Toque numa resposta dos outros para marcar como inválida.</span></div>
       <div class="review" id="cf-lista"></div>
       <div class="row" style="justify-content:space-between">
         <div class="players" id="cf-prontos"></div>
         <div class="row">
-          <button id="btn-pronto" class="ghost">Estou pronto</button>
+          <button id="btn-pronto" class="ghost" hidden>Estou pronto</button>
           <button id="btn-proxima" hidden>Próxima rodada</button>
         </div>
       </div>
@@ -292,6 +309,18 @@ const FRASES = {
   repetido: [
     'Todo mundo botou "{R}" em {C}. Criatividade zero, união total.',
     '"{R}" em {C} de novo? A mesa inteira pensou igual. Lindo e triste.',
+  ],
+  catRepetida: [
+    '{A} pensaram igual em {C}: "{R}". 5 pontos pra cada, criatividade em grupo.',
+    '"{R}" em {C} veio em dobro ({A}). Mente coletiva, 5 pontos.',
+  ],
+  catUnica: [
+    'Ninguém repetiu em {C}. 10 pontos pra quem acertou a letra.',
+    '{C} fechada sem repetição. Cada um no seu quadrado, 10 pra cada.',
+  ],
+  catVazia: [
+    'Ninguém escreveu nada em {C}. Zero geral, que vergonha coletiva.',
+    '{C} ficou em branco pra todo mundo. A letra venceu.',
   ],
   semBranco: [
     'Ninguém deixou nada em branco. Suspeito.',
@@ -537,8 +566,59 @@ function pararRodada(pid, porTempo) {
 function abrirConferencia() {
   estado.fase = 'conferencia';
   for (const j of estado.jogadores) if (!estado.respostas[j.id]) estado.respostas[j.id] = sanear([]);
+  estado.rev = { i: -1, fim: false, veloz: false };
+  estado.comentario = 'Vamos ver o que cada um escreveu…';
+  transmitir();
+  agendarRev(900);
+}
+
+// Sequência da revelação: para cada categoria, um passo por jogador e um passo de fechamento.
+function sequenciaRev(e) {
+  const seq = [];
+  for (let ci = 0; ci < e.categorias.length; ci++) {
+    for (let pi = 0; pi < e.jogadores.length; pi++) seq.push({ ci, pi });
+    seq.push({ ci, fechar: true });
+  }
+  return seq;
+}
+let revTimer = null;
+function agendarRev(ms) { clearTimeout(revTimer); revTimer = setTimeout(avancarRev, ms); }
+function avancarRev() {
+  if (!souHost || !estado || estado.fase !== 'conferencia' || estado.rev.fim) return;
+  const seq = sequenciaRev(estado);
+  estado.rev.i += 1;
+  const passo = seq[estado.rev.i];
+  if (!passo) { terminarRev(); return; }
+  if (passo.fechar) estado.comentario = comentarioCategoria(passo.ci);
+  transmitir();
+  const base = passo.fechar ? 1300 : 1100;
+  agendarRev(estado.rev.veloz ? base / 2.5 : base);
+}
+function terminarRev() {
+  clearTimeout(revTimer);
+  estado.rev.i = sequenciaRev(estado).length - 1;
+  estado.rev.fim = true;
   estado.comentario = comentarioConferencia();
   transmitir();
+}
+$('btn-veloz').addEventListener('click', () => { if (souHost && estado.rev) { estado.rev.veloz = !estado.rev.veloz; transmitir(); } });
+$('btn-pular').addEventListener('click', () => { if (souHost && estado.rev && !estado.rev.fim) terminarRev(); });
+
+function pontosResposta(pid, ci, e = estado) {
+  if (respostaInvalida(pid, ci, e)) return 0;
+  const v = normalizar(e.respostas[pid][ci]);
+  const rep = e.jogadores.filter(j => !respostaInvalida(j.id, ci, e) && normalizar(e.respostas[j.id][ci]) === v).length;
+  return rep > 1 ? 5 : 10;
+}
+function comentarioCategoria(ci) {
+  const cat = estado.categorias[ci];
+  const validos = estado.jogadores.filter(j => !respostaInvalida(j.id, ci));
+  if (!validos.length) return frase('catVazia', { C: cat });
+  const grupos = {};
+  for (const j of validos) { const v = normalizar(estado.respostas[j.id][ci]); (grupos[v] = grupos[v] || []).push(j); }
+  const rep = Object.values(grupos).find(g => g.length > 1);
+  if (rep) return frase('catRepetida', { A: rep.map(j => j.nome).join(' e '), C: cat, R: estado.respostas[rep[0].id][ci] });
+  return frase('catUnica', { C: cat });
 }
 
 function comentarioConferencia() {
@@ -577,18 +657,13 @@ function respostaInvalida(pid, ci, e = estado) {
 function pontuarRodada() {
   const pontos = {};
   for (const j of estado.jogadores) pontos[j.id] = 0;
-  for (let ci = 0; ci < estado.categorias.length; ci++) {
-    const validas = estado.jogadores.filter(j => !respostaInvalida(j.id, ci)).map(j => ({ id: j.id, v: normalizar(estado.respostas[j.id][ci]) }));
-    for (const a of validas) {
-      const rep = validas.filter(b => b.v === a.v).length;
-      pontos[a.id] += rep > 1 ? 5 : 10;
-    }
-  }
+  for (let ci = 0; ci < estado.categorias.length; ci++) for (const j of estado.jogadores) pontos[j.id] += pontosResposta(j.id, ci);
   estado.historico.push({ rodada: estado.rodada, letra: estado.letra, pontos, respostas: estado.respostas, marcas: estado.marcas, paradoPor: estado.paradoPor });
 }
 
 $('btn-proxima').addEventListener('click', () => {
-  if (!souHost || estado.fase !== 'conferencia') return;
+  if (!souHost || estado.fase !== 'conferencia' || !estado.rev.fim) return;
+  clearTimeout(revTimer);
   pontuarRodada();
   if (estado.rodada >= estado.config.rodadas) finalizarJogo(); else iniciarRodada();
 });
@@ -749,32 +824,65 @@ function renderConferencia() {
   $('cf-num').textContent = estado.rodada + ' de ' + estado.config.rodadas;
   $('cf-letra').textContent = estado.letra;
   $('cf-comentario').textContent = estado.comentario;
+
+  // Até onde a revelação chegou
+  const rev = estado.rev || { i: 1e9, fim: true };
+  const seq = sequenciaRev(estado);
+  const atual = rev.fim ? null : seq[rev.i];
+  const catMax = rev.fim ? estado.categorias.length - 1 : (atual ? atual.ci : -1);
+  const revelada = (ci, pi) => rev.fim || ci < catMax || (ci === catMax && atual && !atual.fechar && pi <= atual.pi) || (ci === catMax && atual && atual.fechar);
+  const fechada = (ci) => rev.fim || ci < catMax || (ci === catMax && atual && atual.fechar);
+
+  // Holofote
+  const quem = $('cf-spot-quem'), oque = $('cf-spot-oque');
+  if (rev.fim) { quem.textContent = 'Rodada conferida'; oque.textContent = 'Marque o que não vale e siga para a próxima.'; }
+  else if (!atual) { quem.textContent = 'Recolhendo as folhas…'; oque.textContent = 'Letra ' + estado.letra; }
+  else if (atual.fechar) { quem.textContent = estado.categorias[atual.ci]; oque.textContent = 'Categoria fechada!'; }
+  else {
+    const j = estado.jogadores[atual.pi]; const r = (estado.respostas[j.id] || [])[atual.ci] || '';
+    const inval = respostaInvalida(j.id, atual.ci);
+    quem.textContent = j.nome + ' colocou em ' + estado.categorias[atual.ci] + ':';
+    oque.textContent = r.trim() ? r : 'nada. Em branco.';
+    if (inval === 'letra') oque.textContent += ' (não começa com ' + estado.letra + ')';
+    oque.style.animation = 'none'; void oque.offsetWidth; oque.style.animation = '';
+  }
+  $('cf-controles').hidden = !souHost || rev.fim;
+  $('btn-veloz').textContent = rev.veloz ? 'Velocidade normal' : 'Mais rápido';
+
   const lista = $('cf-lista'); lista.innerHTML = '';
+  let boxAtual = null;
   estado.categorias.forEach((cat, ci) => {
-    const box = document.createElement('div'); box.className = 'cat';
+    if (ci > catMax) return;
+    const box = document.createElement('div'); box.className = 'cat' + (fechada(ci) ? ' fechada' : '') + (atual && atual.ci === ci ? ' atual' : '');
     const h = document.createElement('h3'); h.textContent = cat; box.appendChild(h);
     const ans = document.createElement('div'); ans.className = 'ans';
-    estado.jogadores.forEach(j => {
+    estado.jogadores.forEach((j, pi) => {
+      if (!revelada(ci, pi)) return;
       const r = (estado.respostas[j.id] || [])[ci] || '';
       const b = document.createElement('button'); b.type = 'button';
       const inval = respostaInvalida(j.id, ci);
-      b.className = (r.trim() ? '' : 'blank ') + (inval === 'letra' ? 'wrong ' : '') + (inval === 'marcada' ? 'flagged ' : '') + (j.id === meuId ? 'mine' : '');
+      b.className = (r.trim() ? '' : 'blank ') + (inval === 'letra' ? 'wrong ' : '') + (inval === 'marcada' ? 'flagged ' : '') + (j.id === meuId ? 'mine ' : '') + (atual && !atual.fechar && atual.ci === ci && atual.pi === pi ? 'revelando' : '');
       const who = document.createElement('span'); who.className = 'who'; who.textContent = j.nome + ':';
       b.appendChild(who);
       b.appendChild(document.createTextNode(r.trim() || 'em branco'));
       const marcas = (estado.marcas[j.id + ':' + ci] || []).length;
       if (marcas) { const f = document.createElement('span'); f.className = 'flags'; f.textContent = marcas + '✕'; b.appendChild(f); }
+      if (fechada(ci)) { const p = pontosResposta(j.id, ci); const s = document.createElement('span'); s.className = 'pts' + (p === 5 ? ' meio' : p === 0 ? ' zero' : ''); s.textContent = p ? '+' + p : '0'; b.appendChild(s); }
       b.title = inval === 'letra' ? 'Não começa com ' + estado.letra : (j.id === meuId ? 'Sua resposta' : 'Toque para marcar como inválida');
       b.disabled = j.id === meuId || !r.trim() || inval === 'letra';
       b.addEventListener('click', () => enviarAoHost({ t: 'marcar', rodada: estado.rodada, alvo: j.id, cat: ci }));
       ans.appendChild(b);
     });
     box.appendChild(ans); lista.appendChild(box);
+    if (atual && atual.ci === ci) boxAtual = box;
   });
+  if (boxAtual && !rev.fim) boxAtual.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+
   const pr = $('cf-prontos'); pr.innerHTML = '';
   estado.jogadores.forEach(j => pr.appendChild(chipJogador(j, estado.prontos.includes(j.id) ? ' ready' : '')));
+  $('btn-pronto').hidden = !rev.fim;
   $('btn-pronto').disabled = estado.prontos.includes(meuId);
-  $('btn-proxima').hidden = !souHost;
+  $('btn-proxima').hidden = !souHost || !rev.fim;
   $('btn-proxima').textContent = estado.rodada >= estado.config.rodadas ? 'Ver resultado final' : 'Próxima rodada';
 }
 

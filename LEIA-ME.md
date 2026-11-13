@@ -15,8 +15,9 @@ Jogo de adedonha (stop) para jogar com amigos no celular e no PC, em um único a
 - Letras sorteadas: A B C D E F G I J L M N O P Q R S T U V. Ficam de fora H, K, W, X, Y e Z. Nenhuma letra repete na partida.
 - Tempo: sem tempo, 1, 2, 3 ou 5 minutos por rodada. Com tempo, a rodada acaba no zero ou quando alguém dá STOP.
 - STOP: "só com tudo preenchido" (padrão) ou "a qualquer momento".
-- Depois de cada rodada vem a conferência: todo mundo vê as respostas de todos e pode marcar uma resposta alheia como inválida. Vale a maioria dos outros jogadores. Resposta que não começa com a letra já é riscada sozinha.
-- Pontos: 10 por resposta válida única, 5 se outra pessoa deu a mesma, 0 em branco, com letra errada ou invalidada.
+- Depois do tempo ou do STOP vem a revelação ao vivo: categoria por categoria, a tela mostra o que cada jogador escreveu ("Lucas colocou em Nome: Pedro"), passa para o próximo e, ao fechar a categoria, já dá os pontos na hora. O anfitrião pode acelerar ou pular a revelação.
+- Pontos: 10 por resposta válida única, 5 se outra pessoa deu a mesma, 0 em branco, com letra errada ou invalidada. Acento, cedilha e maiúsculas não mudam a palavra ("Natália" e "NATALIA" são iguais).
+- Depois da revelação, qualquer um pode marcar uma resposta alheia como inválida. Vale a maioria dos outros jogadores. Resposta que não começa com a letra já é riscada sozinha.
 - A pontuação só aparece na tela final, com ranking, títulos e tabela por rodada.
 - Comentários engraçados aparecem na sala, no sorteio da letra, no STOP, na conferência e no final.
 
