@@ -88,12 +88,7 @@ textarea{min-height:200px;resize:vertical;font-size:.9rem}
 .ans button.revelando{outline:3px solid var(--warn);outline-offset:1px}
 .cat.atual{border:1px solid var(--accent)}
 .cat.fechada h3::after{content:" · fechada";color:var(--ok)}
-.spot{background:linear-gradient(135deg,#2a2c5a,#3b3d7a);border-radius:16px;padding:1rem 1.2rem;min-height:4.6rem;display:flex;flex-direction:column;gap:.2rem;justify-content:center}
-.spot .quem{font-size:.85rem;color:#c9cbff;font-weight:600}
-.spot .oque{font-family:var(--display);font-size:1.5rem;font-weight:700;animation:entra .35s ease-out}
-.spot .oque .p{color:var(--warn);margin-left:.4rem;font-size:1.1rem}
 @keyframes entra{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
-@media (prefers-reduced-motion:reduce){.spot .oque{animation:none}}
 
 /* Final */
 .rank{display:flex;flex-direction:column;gap:.6rem}
@@ -108,6 +103,37 @@ th,td{padding:.35rem .5rem;border-bottom:1px solid var(--line);text-align:left}
 th{color:var(--muted);font-weight:600}
 td.n{text-align:right}
 .tablewrap{overflow-x:auto}
+/* Avatares */
+.av{display:inline-block;vertical-align:middle;flex:none}
+.av svg{display:block;width:100%;height:100%}
+.chip .av{width:26px;height:28px;margin-left:-.3rem}
+.picker{display:flex;gap:1rem;align-items:center;flex-wrap:wrap}
+.picker .preview{width:110px;height:120px;background:var(--bg2);border-radius:16px;display:grid;place-items:center;flex:none}
+.picker .preview .av{width:90px;height:100px}
+.fantasias{display:grid;grid-template-columns:repeat(auto-fill,minmax(58px,1fr));gap:.4rem;flex:1;min-width:200px}
+.fantasias button{background:var(--bg2);border:2px solid var(--line);padding:.25rem;border-radius:12px;display:flex;flex-direction:column;align-items:center;gap:.1rem;font-size:.6rem;color:var(--muted);font-weight:600}
+.fantasias button .av{width:40px;height:44px}
+.fantasias button.sel{border-color:var(--warn);color:var(--fg)}
+.cores{display:flex;gap:.4rem;flex-wrap:wrap}
+.cores button{width:30px;height:30px;border-radius:50%;padding:0;border:3px solid transparent}
+.cores button.sel{border-color:#fff}
+
+/* Mesa */
+.mesa{position:relative;width:min(100%,360px);aspect-ratio:1;margin:0 auto;max-width:100%}
+.tampo{position:absolute;inset:24%;border-radius:50%;background:radial-gradient(circle at 50% 40%,#3b3d7a,#262851 70%);box-shadow:inset 0 0 0 6px #4a4d8f,0 10px 30px rgba(0,0,0,.4);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:8%;gap:.1rem}
+.tampo .t1{font-size:.7rem;color:#c9cbff;text-transform:uppercase;letter-spacing:.06em;font-weight:600}
+.tampo .t2{font-family:var(--display);font-size:clamp(1rem,5vw,1.5rem);font-weight:700;line-height:1.1;word-break:break-word;animation:entra .35s ease-out}
+.tampo .t3{font-size:.8rem;color:#c9cbff;font-weight:600}
+.assentos{position:absolute;inset:0;transition:transform .7s cubic-bezier(.4,0,.2,1)}
+.assento{position:absolute;left:50%;top:50%;width:62px;height:62px;margin:-31px 0 0 -31px}
+.assento .up{width:100%;height:100%;display:flex;flex-direction:column;align-items:center;transition:transform .7s cubic-bezier(.4,0,.2,1)}
+.assento .av{width:54px;height:60px;transition:transform .3s,filter .3s}
+.assento .nm{font-size:.65rem;font-weight:800;background:#000a;padding:0 .4rem;border-radius:6px;white-space:nowrap;margin-top:-6px}
+.assento.ativo .av{transform:scale(1.35);filter:drop-shadow(0 0 10px var(--warn))}
+.assento.off{opacity:.4}
+.assento.vazio .av{opacity:.25}
+@media (prefers-reduced-motion:reduce){.assentos,.assento .up,.tampo .t2{transition:none;animation:none}}
+.rank .av{width:40px;height:44px}
 .toast{position:fixed;left:50%;bottom:calc(90px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:#000c;color:#fff;padding:.6rem 1rem;border-radius:10px;font-weight:600;z-index:20;max-width:90vw;text-align:center}
 .err{background:#3b1d24;border:1px solid var(--bad);border-radius:12px;padding:.8rem 1rem}
 [hidden]{display:none!important}
@@ -123,6 +149,16 @@ td.n{text-align:right}
     <div>
       <label for="nome">Seu nome</label>
       <input type="text" id="nome" maxlength="18" placeholder="Como te chamam na mesa?" autocomplete="nickname">
+    </div>
+    <div>
+      <label>Sua fantasia</label>
+      <div class="picker">
+        <div class="preview"><div class="av" id="av-preview"></div></div>
+        <div style="flex:1;min-width:200px;display:flex;flex-direction:column;gap:.6rem">
+          <div class="fantasias" id="fantasias"></div>
+          <div class="cores" id="cores"></div>
+        </div>
+      </div>
     </div>
     <div class="row">
       <button id="btn-criar">Criar sala</button>
@@ -147,6 +183,7 @@ td.n{text-align:right}
         <span class="chip" id="lobby-eu"></span>
       </div>
       <div id="lobby-comentario" class="comment"></div>
+      <div class="mesa" id="lobby-mesa"></div>
       <div>
         <label>Quem já chegou</label>
         <div class="players" id="lobby-jogadores"></div>
@@ -226,7 +263,7 @@ td.n{text-align:right}
       <div class="row" style="justify-content:space-between">
         <h2>Rodada <span id="cf-num"></span> · letra <span id="cf-letra"></span></h2>
       </div>
-      <div class="spot" id="cf-spot"><div class="quem" id="cf-spot-quem"></div><div class="oque" id="cf-spot-oque"></div></div>
+      <div class="mesa" id="cf-mesa"></div>
       <div id="cf-comentario" class="comment"></div>
       <div class="row" id="cf-controles" hidden>
         <button id="btn-veloz" class="ghost small">Mais rápido</button>
@@ -345,6 +382,35 @@ const primeiraLetra = (s) => normalizar(s).replace(/[^a-z]/g, '')[0] || '';
 const uid = () => Math.random().toString(36).slice(2, 8);
 const codigoSala = () => { const c = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; let s = ''; for (let i = 0; i < 5; i++) s += c[Math.floor(Math.random() * c.length)]; return s; };
 
+// ---------- Avatares (desenhados em SVG, sem imagens externas) ----------
+const FANTASIAS = {
+  pirata: { nome: 'Pirata', frente: '<path d="M20 30 Q50 6 80 30 Q50 22 20 30Z" fill="#111"/><rect x="22" y="26" width="56" height="5" fill="#c62828"/><circle cx="50" cy="19" r="3" fill="#fff"/><circle cx="57" cy="46" r="6.5" fill="#111"/><path d="M30 38 L57 40" stroke="#111" stroke-width="2"/>' },
+  astronauta: { nome: 'Astronauta', frente: '<circle cx="50" cy="44" r="31" fill="rgba(180,220,255,.22)" stroke="#e3f2fd" stroke-width="3.5"/><path d="M28 36 Q50 22 72 36" stroke="#fff" stroke-width="2" fill="none" opacity=".7"/>' },
+  vampiro: { nome: 'Vampiro', atras: '<path d="M12 48 L50 108 L88 48 L88 104 L12 104Z" fill="#6a0f1a"/>', frente: '<path d="M24 26 Q50 2 76 26 L64 24 L50 36 L36 24Z" fill="#111"/><path d="M45 60 L47 68 L49 60Z M51 60 L53 68 L55 60Z" fill="#fff"/>' },
+  unicornio: { nome: 'Unicórnio', frente: '<polygon points="50,0 44,24 56,24" fill="#ffd54f" stroke="#f9a825" stroke-width="1.5"/><circle cx="28" cy="24" r="6" fill="#f48fb1"/><circle cx="24" cy="36" r="6" fill="#ce93d8"/><circle cx="23" cy="48" r="5" fill="#80deea"/>' },
+  ninja: { nome: 'Ninja', frente: '<rect x="22" y="34" width="56" height="7" fill="#c62828"/><path d="M78 36 L94 30 L92 40 L80 41Z" fill="#c62828"/><rect x="28" y="54" width="44" height="16" rx="6" fill="#111"/>' },
+  chef: { nome: 'Chef', frente: '<rect x="32" y="12" width="36" height="20" rx="4" fill="#fff" stroke="#ccc" stroke-width="1.5"/><circle cx="34" cy="12" r="9" fill="#fff"/><circle cx="50" cy="9" r="9" fill="#fff"/><circle cx="66" cy="12" r="9" fill="#fff"/>' },
+  rei: { nome: 'Realeza', frente: '<polygon points="28,30 28,10 40,20 50,6 60,20 72,10 72,30" fill="#ffca28" stroke="#f9a825" stroke-width="1.5"/><circle cx="50" cy="20" r="3" fill="#e53935"/><circle cx="36" cy="25" r="2.2" fill="#1e88e5"/><circle cx="64" cy="25" r="2.2" fill="#1e88e5"/>' },
+  alien: { nome: 'Alien', frente: '<path d="M40 16 L32 4" stroke="#1a1a2e" stroke-width="2.5"/><circle cx="32" cy="4" r="3.5" fill="#76ff03"/><path d="M60 16 L68 4" stroke="#1a1a2e" stroke-width="2.5"/><circle cx="68" cy="4" r="3.5" fill="#76ff03"/><ellipse cx="42" cy="46" rx="6" ry="8" fill="#1a1a2e"/><ellipse cx="58" cy="46" rx="6" ry="8" fill="#1a1a2e"/>' },
+  robo: { nome: 'Robô', frente: '<path d="M50 14 L50 3" stroke="#90a4ae" stroke-width="3"/><circle cx="50" cy="3" r="3" fill="#ef5350"/><rect x="38" y="41" width="9" height="9" fill="#1a1a2e"/><rect x="53" y="41" width="9" height="9" fill="#1a1a2e"/><rect x="40" y="56" width="20" height="6" fill="#1a1a2e"/><path d="M45 56 L45 62 M50 56 L50 62 M55 56 L55 62" stroke="#fff" stroke-width="1.5"/>' },
+  dino: { nome: 'Dino', frente: '<polygon points="30,24 38,8 46,22" fill="#43a047"/><polygon points="46,20 54,4 62,20" fill="#43a047"/><polygon points="62,22 70,8 78,24" fill="#43a047"/><path d="M40 62 L43 69 L46 62 M54 62 L57 69 L60 62" fill="#fff"/>' },
+  mago: { nome: 'Mago', frente: '<polygon points="26,30 50,0 74,30" fill="#5e35b1"/><ellipse cx="50" cy="30" rx="30" ry="5" fill="#4527a0"/><polygon points="50,10 52,16 58,16 53,20 55,26 50,22 45,26 47,20 42,16 48,16" fill="#ffd54f"/>' },
+  abacaxi: { nome: 'Abacaxi', frente: '<polygon points="50,14 38,0 48,12" fill="#43a047"/><polygon points="50,14 50,0 54,12" fill="#2e7d32"/><polygon points="50,14 62,0 54,12" fill="#43a047"/><path d="M26 72 L74 72 M28 82 L72 82 M34 92 L66 92" stroke="rgba(0,0,0,.22)" stroke-width="2"/>' },
+};
+const CORES = ['#ff6b57','#7c83ff','#4ade80','#fbbf24','#f472b6','#38bdf8','#a78bfa','#fb923c'];
+function validarAvatar(av) {
+  av = av || {};
+  return { f: FANTASIAS[av.f] ? av.f : 'pirata', c: CORES.includes(av.c) ? av.c : CORES[0] };
+}
+function avatarSVG(av) {
+  av = validarAvatar(av); const F = FANTASIAS[av.f];
+  return '<svg viewBox="0 0 100 110" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">' + (F.atras || '') +
+    '<path d="M50 14 C72 14 82 34 82 62 C82 88 70 100 50 100 C30 100 18 88 18 62 C18 34 28 14 50 14Z" fill="' + av.c + '" stroke="rgba(0,0,0,.3)" stroke-width="3"/>' +
+    '<ellipse cx="50" cy="46" rx="20" ry="15" fill="#fff" opacity=".9"/><circle cx="43" cy="46" r="3.2" fill="#1a1a2e"/><circle cx="57" cy="46" r="3.2" fill="#1a1a2e"/>' +
+    '<path d="M44 58 Q50 63 56 58" stroke="#1a1a2e" stroke-width="2.5" fill="none" stroke-linecap="round"/>' + (F.frente || '') + '</svg>';
+}
+function elAvatar(av) { const d = document.createElement('span'); d.className = 'av'; d.innerHTML = avatarSVG(av); return d; }
+
 // ---------- DOM ----------
 const $ = (id) => document.getElementById(id);
 const telas = ['tela-inicio','tela-lobby','tela-rodada','tela-conferencia','tela-final'];
@@ -370,6 +436,70 @@ let rodadaRenderizada = -1;
 const urlSala = new URLSearchParams(location.search).get('sala');
 
 try { $('nome').value = localStorage.getItem('adedonha-nome') || ''; } catch (e) {}
+
+// Escolha do avatar
+let meuAvatar = { f: sortear(Object.keys(FANTASIAS)), c: sortear(CORES) };
+try { const s = localStorage.getItem('adedonha-avatar'); if (s) meuAvatar = validarAvatar(JSON.parse(s)); } catch (e) {}
+function renderPicker() {
+  $('av-preview').innerHTML = avatarSVG(meuAvatar);
+  const fz = $('fantasias'); fz.innerHTML = '';
+  for (const k in FANTASIAS) {
+    const b = document.createElement('button'); b.type = 'button'; b.className = k === meuAvatar.f ? 'sel' : '';
+    b.appendChild(elAvatar({ f: k, c: meuAvatar.c }));
+    b.appendChild(document.createTextNode(FANTASIAS[k].nome));
+    b.addEventListener('click', () => { meuAvatar.f = k; salvarAvatar(); renderPicker(); });
+    fz.appendChild(b);
+  }
+  const cz = $('cores'); cz.innerHTML = '';
+  CORES.forEach(c => {
+    const b = document.createElement('button'); b.type = 'button'; b.style.background = c; b.className = c === meuAvatar.c ? 'sel' : ''; b.title = 'Cor';
+    b.addEventListener('click', () => { meuAvatar.c = c; salvarAvatar(); renderPicker(); });
+    cz.appendChild(b);
+  });
+}
+function salvarAvatar() { try { localStorage.setItem('adedonha-avatar', JSON.stringify(meuAvatar)); } catch (e) {} }
+renderPicker();
+
+// ---------- Mesa redonda ----------
+function renderMesa(id, ativo, centro) {
+  const mesa = $(id);
+  if (!mesa.querySelector('.assentos')) {
+    mesa.innerHTML = '<div class="assentos"></div><div class="tampo"><div class="t1"></div><div class="t2"></div><div class="t3"></div></div>';
+    mesa.dataset.rot = '0';
+  }
+  const tampo = mesa.querySelector('.tampo');
+  const t2 = tampo.querySelector('.t2');
+  tampo.querySelector('.t1').textContent = centro.t1 || '';
+  if (t2.textContent !== (centro.t2 || '')) { t2.textContent = centro.t2 || ''; t2.style.animation = 'none'; void t2.offsetWidth; t2.style.animation = ''; }
+  tampo.querySelector('.t3').textContent = centro.t3 || '';
+
+  const lugares = estado.jogadores.slice();
+  while (centro.vazios && lugares.length < centro.vazios) lugares.push(null);
+  const n = Math.max(1, lugares.length);
+  const R = Math.max(120, (mesa.clientWidth || 340) * 0.40);
+  let rot = Number(mesa.dataset.rot) || 0;
+  const frente = ativo >= 0 ? ativo : (centro.frente ?? -1);
+  if (frente >= 0) { const alvo = 180 - frente * 360 / n; const delta = ((alvo - rot) % 360 + 540) % 360 - 180; rot += delta; }
+  mesa.dataset.rot = String(rot);
+  const assentos = mesa.querySelector('.assentos');
+  assentos.style.transform = 'rotate(' + rot + 'deg)';
+  const chave = lugares.map(j => j ? j.id + (j.av ? j.av.f + j.av.c : '') + (j.conectado ? 1 : 0) : '-').join('|') + '|' + ativo + '|' + R;
+  if (assentos.dataset.chave !== chave) {
+    assentos.dataset.chave = chave; assentos.innerHTML = '';
+    lugares.forEach((j, i) => {
+      const a = i * 360 / n;
+      const s = document.createElement('div');
+      s.className = 'assento' + (i === ativo ? ' ativo' : '') + (j && !j.conectado ? ' off' : '') + (j ? '' : ' vazio');
+      s.style.transform = 'rotate(' + a + 'deg) translateY(' + (-R) + 'px) rotate(' + (-a) + 'deg)';
+      const up = document.createElement('div'); up.className = 'up';
+      up.appendChild(elAvatar(j ? j.av : { f: 'pirata', c: '#555' }));
+      const nm = document.createElement('div'); nm.className = 'nm'; nm.textContent = j ? j.nome : 'vago';
+      up.appendChild(nm); s.appendChild(up); assentos.appendChild(s);
+    });
+  }
+  assentos.querySelectorAll('.assento .up').forEach(u => { u.style.transform = 'rotate(' + (-rot) + 'deg)'; });
+}
+window.addEventListener('resize', () => { if (estado) renderizar(); });
 $('cfg-categorias').value = CATEGORIAS_PADRAO.join('\n');
 for (let i = 1; i <= LETRAS.length; i++) { const o = document.createElement('option'); o.value = i; o.textContent = i + (i === 1 ? ' rodada' : ' rodadas'); if (i === 5) o.selected = true; $('cfg-rodadas').appendChild(o); }
 
@@ -410,7 +540,7 @@ function criarSala(nome, tentativa) {
   peer.on('open', (id) => {
     souHost = true; meuId = id; meuNome = nome;
     estado = estadoInicial(codigo);
-    estado.jogadores.push({ id: meuId, nome, conectado: true });
+    estado.jogadores.push({ id: meuId, nome, conectado: true, av: validarAvatar(meuAvatar) });
     peer.on('connection', (c) => aceitarConexao(c));
     renderizar();
   });
@@ -430,7 +560,7 @@ function entrarSala(nome, codigo) {
     meuId = id; meuNome = nome;
     connHost = peer.connect(PREFIXO + codigo, { reliable: true });
     const falha = setTimeout(() => { if (!abriu) erroInicio('Não encontrei a sala ' + codigo + '. Confira o código ou peça um link novo.'); }, 12000);
-    connHost.on('open', () => { abriu = true; clearTimeout(falha); connHost.send({ t: 'entrar', nome }); });
+    connHost.on('open', () => { abriu = true; clearTimeout(falha); connHost.send({ t: 'entrar', nome, av: meuAvatar }); });
     connHost.on('data', (m) => receberDoHost(m));
     connHost.on('close', () => desconectado('A conexão com o anfitrião caiu. Peça um link novo para voltar.'));
     connHost.on('error', () => desconectado('Erro na conexão com o anfitrião.'));
@@ -464,10 +594,11 @@ function receberDoCliente(c, m) {
   const pid = c.peer;
   if (m.t === 'entrar') {
     const existente = estado.jogadores.find(x => x.id === pid);
-    if (existente) { existente.conectado = true; existente.nome = m.nome; }
+    const av = validarAvatar(m.av);
+    if (existente) { existente.conectado = true; existente.nome = m.nome; existente.av = av; }
     else if (estado.fase !== 'lobby') { c.send({ t: 'recusado', motivo: 'A partida já começou. Espere a próxima.' }); setTimeout(() => c.close(), 500); return; }
     else if (estado.jogadores.length >= 12) { c.send({ t: 'recusado', motivo: 'A sala está cheia (12 jogadores).' }); setTimeout(() => c.close(), 500); return; }
-    else estado.jogadores.push({ id: pid, nome: String(m.nome || 'Alguém').slice(0, 18), conectado: true });
+    else estado.jogadores.push({ id: pid, nome: String(m.nome || 'Alguém').slice(0, 18), conectado: true, av });
     conns.set(pid, c);
     estado.comentario = estado.fase === 'lobby' ? (m.nome + ' chegou. ' + frase('lobby')) : estado.comentario;
     transmitir();
@@ -737,6 +868,7 @@ function renderizar() {
 function chipJogador(j, extra) {
   const s = document.createElement('span');
   s.className = 'chip' + (j.conectado ? '' : ' off') + (j.id === estado.hostId ? ' host' : '') + (extra || '');
+  s.appendChild(elAvatar(j.av));
   const d = document.createElement('span'); d.className = 'dot'; s.appendChild(d);
   s.appendChild(document.createTextNode(j.nome + (j.id === meuId ? ' (você)' : '')));
   return s;
@@ -747,6 +879,7 @@ function renderLobby() {
   $('lobby-codigo').textContent = estado.codigo;
   $('lobby-eu').textContent = meuNome;
   $('lobby-comentario').textContent = estado.comentario;
+  renderMesa('lobby-mesa', -1, { t1: 'Sala', t2: estado.codigo, t3: estado.jogadores.length + ' na mesa', vazios: 4, frente: estado.jogadores.findIndex(j => j.id === meuId) });
   const lj = $('lobby-jogadores'); lj.innerHTML = '';
   estado.jogadores.forEach(j => lj.appendChild(chipJogador(j)));
   const link = location.origin + location.pathname + '?sala=' + estado.codigo;
@@ -833,18 +966,14 @@ function renderConferencia() {
   const revelada = (ci, pi) => rev.fim || ci < catMax || (ci === catMax && atual && !atual.fechar && pi <= atual.pi) || (ci === catMax && atual && atual.fechar);
   const fechada = (ci) => rev.fim || ci < catMax || (ci === catMax && atual && atual.fechar);
 
-  // Holofote
-  const quem = $('cf-spot-quem'), oque = $('cf-spot-oque');
-  if (rev.fim) { quem.textContent = 'Rodada conferida'; oque.textContent = 'Marque o que não vale e siga para a próxima.'; }
-  else if (!atual) { quem.textContent = 'Recolhendo as folhas…'; oque.textContent = 'Letra ' + estado.letra; }
-  else if (atual.fechar) { quem.textContent = estado.categorias[atual.ci]; oque.textContent = 'Categoria fechada!'; }
+  // Mesa girando: quem está "falando" vem para a frente
+  if (rev.fim) renderMesa('cf-mesa', -1, { t1: 'Letra ' + estado.letra, t2: 'Rodada conferida', t3: 'Marque o que não vale' });
+  else if (!atual) renderMesa('cf-mesa', -1, { t1: 'Letra ' + estado.letra, t2: 'Recolhendo as folhas…', t3: '' });
+  else if (atual.fechar) renderMesa('cf-mesa', -1, { t1: estado.categorias[atual.ci], t2: 'Fechou!', t3: 'pontos na mesa' });
   else {
     const j = estado.jogadores[atual.pi]; const r = (estado.respostas[j.id] || [])[atual.ci] || '';
     const inval = respostaInvalida(j.id, atual.ci);
-    quem.textContent = j.nome + ' colocou em ' + estado.categorias[atual.ci] + ':';
-    oque.textContent = r.trim() ? r : 'nada. Em branco.';
-    if (inval === 'letra') oque.textContent += ' (não começa com ' + estado.letra + ')';
-    oque.style.animation = 'none'; void oque.offsetWidth; oque.style.animation = '';
+    renderMesa('cf-mesa', atual.pi, { t1: estado.categorias[atual.ci], t2: r.trim() ? r : 'em branco', t3: j.nome + (inval === 'letra' ? ' (não começa com ' + estado.letra + ')' : '') });
   }
   $('cf-controles').hidden = !souHost || rev.fim;
   $('btn-veloz').textContent = rev.veloz ? 'Velocidade normal' : 'Mais rápido';
@@ -895,7 +1024,8 @@ function renderFinal() {
   ordem.forEach((j, i) => {
     const r = document.createElement('div'); r.className = 'r';
     const pos = document.createElement('div'); pos.className = 'pos'; pos.textContent = (i + 1) + 'º';
-    const nome = document.createElement('div'); nome.innerHTML = '';
+    const nome = document.createElement('div'); nome.style.display = 'flex'; nome.style.alignItems = 'center'; nome.style.gap = '.6rem';
+    nome.appendChild(elAvatar(j.av));
     const n1 = document.createElement('div'); n1.style.fontWeight = '800'; n1.textContent = j.nome + (j.id === meuId ? ' (você)' : '');
     const n2 = document.createElement('div'); n2.className = 'title'; n2.textContent = (estado.titulos || {})[j.id] || '';
     nome.appendChild(n1); nome.appendChild(n2);

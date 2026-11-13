@@ -9,6 +9,12 @@ Jogo de adedonha (stop) para jogar com amigos no celular e no PC, em um único a
 - O anfitrião precisa manter a página aberta durante toda a partida. Se ele fechar, a sala acaba.
 - Até 12 jogadores por sala.
 
+## Avatares e mesa
+
+- Na tela inicial cada jogador escolhe uma fantasia (Pirata, Astronauta, Vampiro, Unicórnio, Ninja, Chef, Realeza, Alien, Robô, Dino, Mago, Abacaxi) e uma cor. Os bonecos são desenhados em SVG dentro do próprio arquivo, sem imagens externas. A escolha fica salva no aparelho.
+- A sala de espera mostra todo mundo sentado numa mesa redonda, com lugares vagos para convidar.
+- Na revelação, a mesa gira para trazer à frente quem está "falando", e a resposta aparece no centro da mesa.
+
 ## Regras
 
 - 20 categorias padrão (as da imagem do usuário). O anfitrião pode editar a lista na sala de espera, uma por linha.
