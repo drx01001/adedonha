@@ -127,13 +127,44 @@ td.n{text-align:right}
 .mesa{position:relative;width:min(100%,360px);aspect-ratio:1;margin:0 auto;max-width:100%}
 .tampo{position:absolute;inset:24%;border-radius:50%;background:radial-gradient(circle at 50% 40%,#3b3d7a,#262851 70%);box-shadow:inset 0 0 0 6px #4a4d8f,0 10px 30px rgba(0,0,0,.4);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:8%;gap:.1rem}
 .tampo .t1{font-size:.7rem;color:#c9cbff;text-transform:uppercase;letter-spacing:.06em;font-weight:600}
-.tampo .t2{font-family:var(--display);font-size:clamp(1rem,5vw,1.5rem);font-weight:700;line-height:1.1;word-break:break-word;animation:entra .35s ease-out}
+.tampo .t2{font-family:var(--display);font-size:clamp(.95rem,4.2vw,1.35rem);font-weight:700;line-height:1.1;word-break:break-word;animation:entra .35s ease-out}
 .tampo .t3{font-size:.8rem;color:#c9cbff;font-weight:600}
 .assentos{position:absolute;inset:0;transition:transform .7s cubic-bezier(.4,0,.2,1)}
 .assento{position:absolute;left:50%;top:50%;width:var(--tam,62px);height:var(--tam,62px);margin:calc(var(--tam,62px) / -2) 0 0 calc(var(--tam,62px) / -2)}
-.assento .up{width:100%;height:100%;display:flex;flex-direction:column;align-items:center;transition:transform .7s cubic-bezier(.4,0,.2,1)}
+.assento .up{position:relative;width:100%;display:flex;flex-direction:column;align-items:center;transition:transform .7s cubic-bezier(.4,0,.2,1)}
+.assento .pb{position:absolute;top:-8px;right:-14px;font-family:var(--display);font-weight:700;font-size:.8rem;padding:.05rem .4rem;border-radius:999px;border:2px solid var(--bg);animation:entra .3s ease-out}
+.pb.cheio,.pill.cheio{background:var(--ok);color:#0b2e18}
+.pb.meio,.pill.meio{background:var(--warn);color:#3b2a00}
+.pb.zero,.pill.zero{background:var(--bad);color:#fff}
+
+/* Cartão da categoria atual (não cresce, não rola) */
+.cf-topo{display:flex;justify-content:space-between;align-items:baseline;gap:.6rem;flex-wrap:wrap}
+.cf-palco{display:grid;gap:.8rem;align-items:center}
+.cf-palco .mesa{width:min(100%,250px)}
+@media (min-width:620px){.cf-palco{grid-template-columns:minmax(0,300px) minmax(0,1fr)}.cf-palco .mesa{width:100%}}
+.cf-prog{font-size:.8rem;color:var(--muted);font-weight:700;font-variant-numeric:tabular-nums}
+.atual{background:var(--bg2);border-radius:16px;padding:.8rem .9rem;display:flex;flex-direction:column;gap:.6rem}
+.atual-cab{display:flex;align-items:baseline;justify-content:space-between;gap:.6rem}
+.atual-cab h3{font-size:1.25rem}
+.eyebrow{font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:800}
+.linhas{display:flex;flex-direction:column;gap:.35rem}
+.linha{display:grid;grid-template-columns:34px minmax(0,1fr) auto;gap:.6rem;align-items:center;padding:.35rem .5rem;border-radius:12px;border:1px solid transparent;transition:background .2s,border-color .2s}
+.linha .av{width:30px;height:33px}
+.linha .q{font-size:.72rem;color:var(--muted);font-weight:700}
+.linha .r{font-family:var(--display);font-weight:700;font-size:1.05rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.linha.oculta .r{color:var(--line)}
+.linha.branco .r{color:var(--muted);font-style:italic;font-family:var(--body);font-weight:600}
+.linha.agora{background:#2a2c55;border-color:var(--warn)}
+.pill{font-weight:800;font-size:.8rem;padding:.2rem .6rem;border-radius:999px;white-space:nowrap}
+.pill.grande{font-family:var(--display);font-size:1rem;min-width:3.2rem;text-align:center;padding:.25rem .6rem}
+.linha .mot{font-weight:800}
+.linha .mot.cheio{color:var(--ok)}
+.linha .mot.meio{color:var(--warn)}
+.linha .mot.zero{color:var(--bad)}
+.regra{display:flex;flex-wrap:wrap;gap:.4rem;font-size:.78rem}
+.regra span{display:inline-flex;align-items:center;gap:.3rem;color:var(--muted)}
 .assento .av{width:calc(var(--tam,62px) * .87);height:calc(var(--tam,62px) * .97);transition:transform .3s,filter .3s}
-.assento .nm{font-size:max(.5rem,calc(var(--tam,62px) * .17));font-weight:800;background:#000a;padding:0 .4rem;border-radius:6px;white-space:nowrap;margin-top:-6px;max-width:calc(var(--tam,62px) * 1.6);overflow:hidden;text-overflow:ellipsis}
+.assento .nm{font-size:max(.5rem,calc(var(--tam,62px) * .17));font-weight:800;background:#000a;padding:0 .4rem;border-radius:6px;white-space:nowrap;margin-top:-2px;flex:none;line-height:1.35;max-width:calc(var(--tam,62px) * 1.6);overflow:hidden;text-overflow:ellipsis}
 .assento.ativo .av{transform:scale(1.35);filter:drop-shadow(0 0 10px var(--warn))}
 .assento.off{opacity:.4}
 .assento.vazio .av{opacity:.25}
@@ -319,24 +350,34 @@ body.estourou .wrap{animation:chacoalha .5s 1.4s}
   <!-- CONFERÊNCIA -->
   <section id="tela-conferencia" hidden>
     <div class="card">
-      <div class="row" style="justify-content:space-between">
+      <div class="cf-topo">
         <h2>Assembleia <span id="cf-num"></span> · letra <span id="cf-letra"></span></h2>
+        <span class="cf-prog" id="cf-prog"></span>
       </div>
-      <div class="mesa" id="cf-mesa"></div>
-      <div id="cf-comentario" class="comment"></div>
+      <div class="cf-palco">
+        <div class="mesa" id="cf-mesa"></div>
+        <div class="atual" id="cf-atual" hidden>
+          <div class="atual-cab"><h3 id="cf-atual-cat"></h3><span class="eyebrow" id="cf-atual-n"></span></div>
+          <div class="linhas" id="cf-linhas"></div>
+        </div>
+      </div>
       <div class="row" id="cf-controles" hidden>
         <button id="btn-voltar" class="ghost small">◀ Voltar</button>
         <button id="btn-pular-um" class="ghost small">Pular ▶</button>
         <button id="btn-veloz" class="ghost small">Mais rápido</button>
         <button id="btn-pular" class="ghost small">Pular tudo</button>
       </div>
-      <div class="legend"><span>Única: +10. Repetida: +5. Em branco, letra errada ou invalidada: 0.</span><span>Acento e cedilha não mudam a palavra.</span><span>Toque numa resposta dos outros para marcar como inválida.</span></div>
-      <div class="review" id="cf-lista"></div>
-      <div class="row" style="justify-content:space-between">
-        <div class="players" id="cf-prontos"></div>
-        <div class="row">
-          <button id="btn-pronto" class="ghost" hidden>Estou pronto</button>
-          <button id="btn-proxima" hidden>Próxima rodada</button>
+      <div class="regra"><span><b class="pill cheio">+10</b> ninguém repetiu</span><span><b class="pill meio">+5</b> repetida</span><span><b class="pill zero">0</b> em branco ou letra errada</span></div>
+      <div id="cf-comentario" class="comment"></div>
+      <div id="cf-resumo" hidden>
+        <p class="muted small" style="margin-bottom:.6rem">Tudo conferido. Achou uma resposta que não vale? Toque nela para anular. Vale a maioria.</p>
+        <div class="review" id="cf-lista"></div>
+        <div class="row" style="justify-content:space-between;margin-top:1rem">
+          <div class="players" id="cf-prontos"></div>
+          <div class="row">
+            <button id="btn-pronto" class="ghost" hidden>Estou pronto</button>
+            <button id="btn-proxima" hidden>Próxima assembleia</button>
+          </div>
         </div>
       </div>
     </div>
@@ -348,7 +389,7 @@ body.estourou .wrap{animation:chacoalha .5s 1.4s}
       <h2>Encerrou a última assembleia!</h2>
       <div id="fn-comentario" class="comment"></div>
       <div class="rank" id="fn-rank"></div>
-      <details>
+      <details open>
         <summary>Pontos por assembleia</summary>
         <div class="tablewrap" style="margin-top:.6rem"><table id="fn-tabela"></table></div>
       </details>
@@ -554,7 +595,8 @@ renderPicker();
 // ---------- Mesa redonda ----------
 function renderMesa(id, ativo, centro) {
   const mesa = $(id);
-  if (!mesa.querySelector('.assentos')) {
+  const mesaNova = !mesa.querySelector('.assentos');
+  if (mesaNova) {
     mesa.innerHTML = '<div class="assentos"></div><div class="tampo"><div class="t1"></div><div class="t2"></div><div class="t3"></div></div>';
     mesa.dataset.rot = '0';
   }
@@ -567,30 +609,42 @@ function renderMesa(id, ativo, centro) {
   const lugares = estado.jogadores.slice();
   if (lugares.length === 1) lugares.push(null); // uma cadeira vaga só para lembrar de convidar
   const n = Math.max(1, lugares.length);
-  const R = Math.max(120, (mesa.clientWidth || 340) * 0.41);
+  const R = Math.max(95, (mesa.clientWidth || 340) * 0.40);
   const tam = Math.round(Math.max(34, Math.min(62, (2 * Math.PI * R / n) * 0.78)));
   mesa.style.setProperty('--tam', tam + 'px');
-  let rot = Number(mesa.dataset.rot) || 0;
+  const rotAntes = Number(mesa.dataset.rot) || 0;
+  let rot = rotAntes;
   const frente = ativo >= 0 ? ativo : (centro.frente ?? -1);
   if (frente >= 0) { const alvo = 180 - frente * 360 / n; const delta = ((alvo - rot) % 360 + 540) % 360 - 180; rot += delta; }
   mesa.dataset.rot = String(rot);
   const assentos = mesa.querySelector('.assentos');
   assentos.style.transform = 'rotate(' + rot + 'deg)';
-  const chave = lugares.map(j => j ? j.id + (j.av ? j.av.f + j.av.c : '') + (j.conectado ? 1 : 0) : '-').join('|') + '|' + ativo + '|' + R + '|' + tam;
+  const chave = lugares.map(j => j ? j.id + (j.av ? j.av.f + j.av.c : '') + (j.conectado ? 1 : 0) : '-').join('|') + '|' + R + '|' + tam;
   if (assentos.dataset.chave !== chave) {
     assentos.dataset.chave = chave; assentos.innerHTML = '';
     lugares.forEach((j, i) => {
       const a = i * 360 / n;
       const s = document.createElement('div');
-      s.className = 'assento' + (i === ativo ? ' ativo' : '') + (j && !j.conectado ? ' off' : '') + (j ? '' : ' vazio');
+      s.className = 'assento' + (j && !j.conectado ? ' off' : '') + (j ? '' : ' vazio');
       s.style.transform = 'rotate(' + a + 'deg) translateY(' + (-R) + 'px) rotate(' + (-a) + 'deg)';
       const up = document.createElement('div'); up.className = 'up';
+      up.style.transform = 'rotate(' + (-(mesaNova ? rot : rotAntes)) + 'deg)'; // nasce em pé onde a mesa está e gira junto com ela
       up.appendChild(elAvatar(j ? j.av : { f: 'pirata', c: '#555' }));
       const nm = document.createElement('div'); nm.className = 'nm'; nm.textContent = j ? j.nome : 'convide!';
       up.appendChild(nm); s.appendChild(up); assentos.appendChild(s);
     });
   }
+  void assentos.offsetWidth; // garante que o giro dos bonecos anime junto com o da mesa
   assentos.querySelectorAll('.assento .up').forEach(u => { u.style.transform = 'rotate(' + (-rot) + 'deg)'; });
+  // Destaque de quem está mostrando a resposta, e selo de pontos (só quando a categoria fecha)
+  assentos.querySelectorAll('.assento').forEach((s, i) => {
+    s.classList.toggle('ativo', i === ativo);
+    const info = centro.pontos && centro.pontos[i];
+    let b = s.querySelector('.pb');
+    if (!info) { if (b) b.remove(); return; }
+    if (!b) { b = document.createElement('div'); s.querySelector('.up').appendChild(b); }
+    b.className = 'pb ' + info.cls; b.textContent = info.p ? '+' + info.p : '0';
+  });
 }
 window.addEventListener('resize', () => { if (estado) renderizar(); });
 $('cfg-categorias').value = CATEGORIAS_PADRAO.join('\n');
@@ -900,6 +954,15 @@ function pontosResposta(pid, ci, e = estado) {
   const rep = e.jogadores.filter(j => !respostaInvalida(j.id, ci, e) && normalizar(e.respostas[j.id][ci]) === v).length;
   return rep > 1 ? 5 : 10;
 }
+// Pontos de uma resposta com o motivo, para mostrar de forma clara
+function infoPontos(pid, ci) {
+  const inv = respostaInvalida(pid, ci);
+  if (inv === 'branco') return { p: 0, motivo: 'em branco', cls: 'zero' };
+  if (inv === 'letra') return { p: 0, motivo: 'letra errada', cls: 'zero' };
+  if (inv === 'marcada') return { p: 0, motivo: 'anulada', cls: 'zero' };
+  const p = pontosResposta(pid, ci);
+  return p === 5 ? { p, motivo: 'repetida', cls: 'meio' } : { p, motivo: 'única', cls: 'cheio' };
+}
 function comentarioCategoria(ci) {
   const cat = estado.categorias[ci];
   const validos = estado.jogadores.filter(j => !respostaInvalida(j.id, ci));
@@ -1149,58 +1212,82 @@ function renderConferencia() {
   const seq = sequenciaRev(estado);
   const atual = rev.fim ? null : seq[rev.i];
   const catMax = rev.fim ? estado.categorias.length - 1 : (atual ? atual.ci : -1);
-  const revelada = (ci, pi) => rev.fim || ci < catMax || (ci === catMax && atual && !atual.fechar && pi <= atual.pi) || (ci === catMax && atual && atual.fechar);
-  const fechada = (ci) => rev.fim || ci < catMax || (ci === catMax && atual && atual.fechar);
+  const nCat = estado.categorias.length;
+  const pontosDaMesa = (ci) => estado.jogadores.map(j => infoPontos(j.id, ci));
 
-  // Mesa girando: quem está "falando" vem para a frente
-  if (rev.fim) renderMesa('cf-mesa', -1, { t1: 'Letra ' + estado.letra, t2: 'Rodada conferida', t3: 'Marque o que não vale' });
+  // Mesa: quem está mostrando a resposta vem para a frente; ao fechar, cada boneco ganha o selo de pontos
+  if (rev.fim) renderMesa('cf-mesa', -1, { t1: 'Letra ' + estado.letra, t2: 'Conferida', t3: nCat + ' categorias' });
   else if (!atual) renderMesa('cf-mesa', -1, { t1: 'Letra ' + estado.letra, t2: 'Recolhendo as folhas…', t3: '' });
-  else if (atual.fechar) renderMesa('cf-mesa', -1, { t1: estado.categorias[atual.ci], t2: 'Fechou!', t3: 'pontos na mesa' });
-  else {
-    const j = estado.jogadores[atual.pi]; const r = (estado.respostas[j.id] || [])[atual.ci] || '';
-    const inval = respostaInvalida(j.id, atual.ci);
-    renderMesa('cf-mesa', atual.pi, { t1: estado.categorias[atual.ci], t2: r.trim() ? r : 'em branco', t3: j.nome + (inval === 'letra' ? ' (não começa com ' + estado.letra + ')' : '') + (rev.pausa ? ' · pausado' : '') });
+  else if (atual.fechar) {
+    const infos = pontosDaMesa(atual.ci);
+    const u = infos.filter(x => x.motivo === 'única').length, rp = infos.filter(x => x.motivo === 'repetida').length, z = infos.filter(x => !x.p).length;
+    renderMesa('cf-mesa', -1, { t1: estado.categorias[atual.ci], t2: 'Pontos!', t3: [u && u + (u > 1 ? ' únicas' : ' única'), rp && rp + (rp > 1 ? ' repetidas' : ' repetida'), z && z + ' zerada' + (z > 1 ? 's' : '')].filter(Boolean).join(' · '), pontos: infos });
+  } else {
+    const j = estado.jogadores[atual.pi]; const r = ((estado.respostas[j.id] || [])[atual.ci] || '').trim();
+    renderMesa('cf-mesa', atual.pi, { t1: estado.categorias[atual.ci], t2: r || 'em branco', t3: j.nome + (rev.pausa ? ' · pausado' : '') });
   }
+  $('cf-prog').textContent = rev.fim ? 'Todas conferidas' : atual ? 'Categoria ' + (atual.ci + 1) + ' de ' + nCat : '';
   $('btn-voltar').disabled = !atual || rev.i <= 0;
   $('btn-pular-um').textContent = rev.pausa ? 'Continuar ▶' : 'Pular ▶';
   $('cf-controles').hidden = !souHost || rev.fim;
   $('btn-veloz').textContent = rev.veloz ? 'Velocidade normal' : 'Mais rápido';
 
+  // Cartão fixo da categoria que está sendo revelada: uma linha por jogador, sempre no mesmo lugar
+  $('cf-atual').hidden = !atual;
+  if (atual) {
+    $('cf-atual-cat').textContent = estado.categorias[atual.ci];
+    $('cf-atual-n').textContent = atual.fechar ? 'fechou' : 'revelando';
+    const linhas = $('cf-linhas'); linhas.innerHTML = '';
+    estado.jogadores.forEach((j, pi) => {
+      const mostrada = atual.fechar || pi <= atual.pi;
+      const r = ((estado.respostas[j.id] || [])[atual.ci] || '').trim();
+      const l = document.createElement('div');
+      l.className = 'linha' + (!mostrada ? ' oculta' : '') + (mostrada && !r ? ' branco' : '') + (!atual.fechar && pi === atual.pi ? ' agora' : '');
+      l.appendChild(elAvatar(j.av));
+      const meio = document.createElement('div'); meio.style.minWidth = '0';
+      const info = atual.fechar ? infoPontos(j.id, atual.ci) : null;
+      const q = document.createElement('div'); q.className = 'q'; q.textContent = j.nome + (j.id === meuId ? ' (você)' : '');
+      if (info) { const m = document.createElement('span'); m.className = 'mot ' + info.cls; m.textContent = ' · ' + info.motivo; q.appendChild(m); }
+      const rr = document.createElement('div'); rr.className = 'r'; rr.textContent = !mostrada ? '• • •' : (r || 'em branco');
+      meio.appendChild(q); meio.appendChild(rr); l.appendChild(meio);
+      if (info) { const p = document.createElement('span'); p.className = 'pill grande ' + info.cls; p.textContent = info.p ? '+' + info.p : '0'; l.appendChild(p); }
+      else l.appendChild(document.createElement('span'));
+      linhas.appendChild(l);
+    });
+  }
+
+  // Resumo completo: só depois que tudo foi revelado (aí dá para anular respostas)
+  $('cf-resumo').hidden = !rev.fim;
   const lista = $('cf-lista'); lista.innerHTML = '';
-  let boxAtual = null;
-  estado.categorias.forEach((cat, ci) => {
-    if (ci > catMax) return;
-    const box = document.createElement('div'); box.className = 'cat' + (fechada(ci) ? ' fechada' : '') + (atual && atual.ci === ci ? ' atual' : '');
+  if (rev.fim) estado.categorias.forEach((cat, ci) => {
+    const box = document.createElement('div'); box.className = 'cat';
     const h = document.createElement('h3'); h.textContent = cat; box.appendChild(h);
     const ans = document.createElement('div'); ans.className = 'ans';
-    estado.jogadores.forEach((j, pi) => {
-      if (!revelada(ci, pi)) return;
-      const r = (estado.respostas[j.id] || [])[ci] || '';
-      const b = document.createElement('button'); b.type = 'button';
+    estado.jogadores.forEach((j) => {
+      const r = ((estado.respostas[j.id] || [])[ci] || '').trim();
       const inval = respostaInvalida(j.id, ci);
-      b.className = (r.trim() ? '' : 'blank ') + (inval === 'letra' ? 'wrong ' : '') + (inval === 'marcada' ? 'flagged ' : '') + (j.id === meuId ? 'mine ' : '') + (atual && !atual.fechar && atual.ci === ci && atual.pi === pi ? 'revelando' : '');
+      const info = infoPontos(j.id, ci);
+      const b = document.createElement('button'); b.type = 'button';
+      b.className = (r ? '' : 'blank ') + (inval === 'letra' ? 'wrong ' : '') + (inval === 'marcada' ? 'flagged ' : '') + (j.id === meuId ? 'mine' : '');
       const who = document.createElement('span'); who.className = 'who'; who.textContent = j.nome + ':';
-      b.appendChild(who);
-      b.appendChild(document.createTextNode(r.trim() || 'em branco'));
+      b.appendChild(who); b.appendChild(document.createTextNode(r || 'em branco'));
       const marcas = (estado.marcas[j.id + ':' + ci] || []).length;
       if (marcas) { const f = document.createElement('span'); f.className = 'flags'; f.textContent = marcas + '✕'; b.appendChild(f); }
-      if (fechada(ci)) { const p = pontosResposta(j.id, ci); const s = document.createElement('span'); s.className = 'pts' + (p === 5 ? ' meio' : p === 0 ? ' zero' : ''); s.textContent = p ? '+' + p : '0'; b.appendChild(s); }
-      b.title = inval === 'letra' ? 'Não começa com ' + estado.letra : (j.id === meuId ? 'Sua resposta' : 'Toque para marcar como inválida');
-      b.disabled = j.id === meuId || !r.trim() || inval === 'letra';
+      const s = document.createElement('span'); s.className = 'pill ' + info.cls; s.textContent = info.p ? '+' + info.p : '0'; b.appendChild(s);
+      b.title = info.motivo + (j.id === meuId ? ' · sua resposta' : r && inval !== 'letra' ? ' · toque para anular' : '');
+      b.disabled = j.id === meuId || !r || inval === 'letra';
       b.addEventListener('click', () => enviarAoHost({ t: 'marcar', rodada: estado.rodada, alvo: j.id, cat: ci }));
       ans.appendChild(b);
     });
     box.appendChild(ans); lista.appendChild(box);
-    if (atual && atual.ci === ci) boxAtual = box;
   });
-  if (boxAtual && !rev.fim) boxAtual.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
 
   const pr = $('cf-prontos'); pr.innerHTML = '';
   estado.jogadores.forEach(j => pr.appendChild(chipJogador(j, estado.prontos.includes(j.id) ? ' ready' : '')));
   $('btn-pronto').hidden = !rev.fim;
   $('btn-pronto').disabled = estado.prontos.includes(meuId);
   $('btn-proxima').hidden = !souHost || !rev.fim;
-  $('btn-proxima').textContent = estado.rodada >= estado.config.rodadas ? 'Ver resultado final' : 'Próxima rodada';
+  $('btn-proxima').textContent = estado.rodada >= estado.config.rodadas ? 'Ver resultado final' : 'Próxima assembleia';
 }
 
 function renderFinal() {
@@ -1211,7 +1298,8 @@ function renderFinal() {
   const rank = $('fn-rank'); rank.innerHTML = '';
   ordem.forEach((j, i) => {
     const r = document.createElement('div'); r.className = 'r';
-    const pos = document.createElement('div'); pos.className = 'pos'; pos.textContent = (i + 1) + 'º';
+    const lugar = 1 + ordem.filter(o => totais[o.id] > totais[j.id]).length; // empate divide a posição
+    const pos = document.createElement('div'); pos.className = 'pos'; pos.textContent = lugar + 'º';
     const nome = document.createElement('div'); nome.style.display = 'flex'; nome.style.alignItems = 'center'; nome.style.gap = '.6rem';
     nome.appendChild(elAvatar(j.av));
     const n1 = document.createElement('div'); n1.style.fontWeight = '800'; n1.textContent = j.nome + (j.id === meuId ? ' (você)' : '');
