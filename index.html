@@ -151,12 +151,9 @@ body.alerta .topbar{animation:alerta 1s infinite}
 @keyframes cresce{0%{scale:.6}80%{scale:1.1}100%{scale:1.2}}
 .bomba .bum{position:absolute;inset:0;display:grid;place-items:center;font-family:var(--display);font-size:clamp(4rem,20vw,9rem);font-weight:700;color:#fff;background:radial-gradient(circle,#ffb347,#ff6b57 40%,transparent 70%);opacity:0;animation:bum .6s ease-out 1.4s forwards}
 @keyframes bum{0%{opacity:0;transform:scale(.3)}40%{opacity:1;transform:scale(1.15)}100%{opacity:1;transform:scale(1)}}
-body.estourou{animation:chacoalha .5s 1.4s}
+body.estourou .wrap{animation:chacoalha .5s 1.4s}
 @keyframes chacoalha{0%,100%{transform:translate(0)}20%{transform:translate(-8px,4px)}40%{transform:translate(8px,-4px)}60%{transform:translate(-6px,-2px)}80%{transform:translate(6px,2px)}}
-.falar{display:flex;justify-content:center;margin-top:.2rem}
-.falar button{font-family:var(--display);font-size:1.2rem;padding:.9rem 1.6rem;background:var(--warn);color:#2a1d00;border-radius:16px;box-shadow:0 8px 28px rgba(251,191,36,.35);animation:pulsa 1.2s infinite;max-width:100%;white-space:normal}
-@keyframes pulsa{50%{transform:scale(1.04)}}
-@media (prefers-reduced-motion:reduce){body.alerta .topbar,.contagem span,.bomba svg,.bomba .bum,body.estourou,.falar button{animation:none}.bomba .bum{opacity:1}}
+@media (prefers-reduced-motion:reduce){body.alerta .topbar,.contagem span,.bomba svg,.bomba .bum,body.estourou .wrap{animation:none}.bomba .bum{opacity:1}}
 
 /* Chat */
 .balao{position:fixed;right:calc(14px + env(safe-area-inset-right,0px));bottom:calc(14px + env(safe-area-inset-bottom,0px));width:52px;height:52px;border-radius:50%;background:var(--accent);box-shadow:0 6px 20px rgba(0,0,0,.4);display:grid;place-items:center;padding:0;z-index:30}
@@ -326,7 +323,6 @@ body.estourou{animation:chacoalha .5s 1.4s}
         <h2>Assembleia <span id="cf-num"></span> · letra <span id="cf-letra"></span></h2>
       </div>
       <div class="mesa" id="cf-mesa"></div>
-      <div class="falar" id="cf-falar" hidden><button type="button" id="btn-falar">Falar</button></div>
       <div id="cf-comentario" class="comment"></div>
       <div class="row" id="cf-controles" hidden>
         <button id="btn-voltar" class="ghost small">◀ Voltar</button>
@@ -718,11 +714,6 @@ function receberDoCliente(c, m) {
   }
   if (m.t === 'marcar' && estado.fase === 'conferencia' && m.rodada === estado.rodada) { alternarMarca(pid, m.alvo, m.cat); transmitir(); return; }
   if (m.t === 'pronto' && estado.fase === 'conferencia') { if (!estado.prontos.includes(pid)) estado.prontos.push(pid); transmitir(); return; }
-  if (m.t === 'falar' && estado.fase === 'conferencia' && estado.rev && m.i === estado.rev.i) {
-    const passo = sequenciaRev(estado)[estado.rev.i];
-    if (passo && !passo.fechar && estado.jogadores[passo.pi] && estado.jogadores[passo.pi].id === pid) falarRev();
-    return;
-  }
   if (m.t === 'chat') {
     const texto = String(m.texto || '').trim().slice(0, 200); if (!texto) return;
     const j = estado.jogadores.find(x => x.id === pid);
@@ -864,32 +855,23 @@ function sequenciaRev(e) {
   return seq;
 }
 let revTimer = null;
-function agendarRev(ms) { clearTimeout(revTimer); revTimer = setTimeout(() => avancarRevOuFalar(), ms); }
+function agendarRev(ms) { clearTimeout(revTimer); revTimer = setTimeout(avancarRev, ms); }
+// A revelação roda sozinha: cada resposta aparece no centro da mesa, a mesa gira para o próximo
 function avancarRev() {
   if (!souHost || !estado || estado.fase !== 'conferencia' || estado.rev.fim) return;
   const seq = sequenciaRev(estado);
-  estado.rev.i += 1;
+  estado.rev.i += 1; estado.rev.pausa = false;
   const passo = seq[estado.rev.i];
   if (!passo) { terminarRev(); return; }
-  estado.rev.falou = false; estado.rev.pausa = false;
-  if (passo.fechar) { estado.comentario = comentarioCategoria(passo.ci); transmitir(); agendarRev(estado.rev.veloz ? 400 : 900); return; }
-  // Vez do jogador falar: ele toca na própria resposta. Se demorar, a mesa fala por ele.
-  const j = estado.jogadores[passo.pi];
-  if (j && j.conectado) { transmitir(); agendarRev(estado.rev.veloz ? 3000 : 8000); }
-  else falarRev();
-}
-function falarRev() {
-  if (!souHost || !estado || estado.fase !== 'conferencia' || estado.rev.fim || estado.rev.falou) return;
-  const passo = sequenciaRev(estado)[estado.rev.i];
-  if (!passo || passo.fechar) return;
-  estado.rev.falou = true; estado.rev.pausa = false;
+  if (passo.fechar) { estado.comentario = comentarioCategoria(passo.ci); transmitir(); agendarRev(estado.rev.veloz ? 450 : 1100); return; }
   transmitir();
-  agendarRev(estado.rev.veloz ? 200 : 350); // falou, já passa para o próximo
+  const base = estado.jogadores.length >= 6 ? 950 : 1300; // mesa cheia anda um pouco mais rápido
+  agendarRev(estado.rev.veloz ? base / 2.5 : base);
 }
 function pularRev() {
   if (!souHost || !estado || estado.fase !== 'conferencia' || estado.rev.fim) return;
-  clearTimeout(revTimer); estado.rev.falou = true; estado.rev.pausa = false;
-  avancarRevOriginal();
+  clearTimeout(revTimer);
+  avancarRev();
 }
 function voltarRev() {
   if (!souHost || !estado || estado.fase !== 'conferencia' || estado.rev.fim) return;
@@ -897,17 +879,8 @@ function voltarRev() {
   let i = estado.rev.i - 1; while (i >= 0 && seq[i].fechar) i--;
   if (i < 0) return;
   clearTimeout(revTimer);
-  estado.rev.i = i; estado.rev.falou = true; estado.rev.pausa = true; // fica parado até o anfitrião pular
+  estado.rev.i = i; estado.rev.pausa = true; // fica parado nessa resposta até o anfitrião continuar
   transmitir();
-}
-// Quando o tempo de fala esgota, o timer chama avancarRev; se o jogador ainda não falou, a mesa fala por ele antes
-const avancarRevOriginal = avancarRev;
-function avancarRevOuFalar() {
-  if (estado && estado.fase === 'conferencia' && estado.rev && !estado.rev.fim && !estado.rev.falou) {
-    const passo = sequenciaRev(estado)[estado.rev.i];
-    if (passo && !passo.fechar) { falarRev(); return; }
-  }
-  avancarRevOriginal();
 }
 function terminarRev() {
   clearTimeout(revTimer);
@@ -1176,30 +1149,20 @@ function renderConferencia() {
   const seq = sequenciaRev(estado);
   const atual = rev.fim ? null : seq[rev.i];
   const catMax = rev.fim ? estado.categorias.length - 1 : (atual ? atual.ci : -1);
-  const revelada = (ci, pi) => rev.fim || ci < catMax || (ci === catMax && atual && !atual.fechar && (pi < atual.pi || (pi === atual.pi && rev.falou))) || (ci === catMax && atual && atual.fechar);
+  const revelada = (ci, pi) => rev.fim || ci < catMax || (ci === catMax && atual && !atual.fechar && pi <= atual.pi) || (ci === catMax && atual && atual.fechar);
   const fechada = (ci) => rev.fim || ci < catMax || (ci === catMax && atual && atual.fechar);
 
   // Mesa girando: quem está "falando" vem para a frente
   if (rev.fim) renderMesa('cf-mesa', -1, { t1: 'Letra ' + estado.letra, t2: 'Rodada conferida', t3: 'Marque o que não vale' });
   else if (!atual) renderMesa('cf-mesa', -1, { t1: 'Letra ' + estado.letra, t2: 'Recolhendo as folhas…', t3: '' });
   else if (atual.fechar) renderMesa('cf-mesa', -1, { t1: estado.categorias[atual.ci], t2: 'Fechou!', t3: 'pontos na mesa' });
-  else if (!rev.falou) {
-    const j = estado.jogadores[atual.pi]; const minhaVez = j.id === meuId;
-    renderMesa('cf-mesa', atual.pi, { t1: estado.categorias[atual.ci], t2: minhaVez ? 'Sua vez!' : 'Vez de ' + j.nome, t3: minhaVez ? 'toque na sua resposta' : 'esperando falar…' });
-  } else {
+  else {
     const j = estado.jogadores[atual.pi]; const r = (estado.respostas[j.id] || [])[atual.ci] || '';
     const inval = respostaInvalida(j.id, atual.ci);
     renderMesa('cf-mesa', atual.pi, { t1: estado.categorias[atual.ci], t2: r.trim() ? r : 'em branco', t3: j.nome + (inval === 'letra' ? ' (não começa com ' + estado.letra + ')' : '') + (rev.pausa ? ' · pausado' : '') });
   }
   $('btn-voltar').disabled = !atual || rev.i <= 0;
-  // Botão para falar a própria resposta
-  const minhaVezAgora = atual && !atual.fechar && !rev.falou && estado.jogadores[atual.pi] && estado.jogadores[atual.pi].id === meuId;
-  $('cf-falar').hidden = !minhaVezAgora;
-  if (minhaVezAgora) {
-    const r = ((estado.respostas[meuId] || [])[atual.ci] || '').trim();
-    $('btn-falar').textContent = r ? r : 'Passo, deixei em branco';
-    $('btn-falar').onclick = () => { enviarAoHost({ t: 'falar', i: rev.i }); $('cf-falar').hidden = true; };
-  }
+  $('btn-pular-um').textContent = rev.pausa ? 'Continuar ▶' : 'Pular ▶';
   $('cf-controles').hidden = !souHost || rev.fim;
   $('btn-veloz').textContent = rev.veloz ? 'Velocidade normal' : 'Mais rápido';
 
