@@ -1,6 +1,6 @@
-# Adedonha dos Amigos
+# Contemplados
 
-Jogo de adedonha (stop) para jogar com amigos no celular e no PC, em um único arquivo: `index.html`.
+Jogo de adedonha (stop) para jogar com amigos no celular e no PC, em um único arquivo: `index.html`. O nome é um trocadilho de consórcio: contemplado é quem leva. As rodadas se chamam assembleias e as salas são numeradas (Sala 1, Sala 2…) por aparelho de quem cria.
 
 ## Como funciona
 
@@ -14,6 +14,12 @@ Jogo de adedonha (stop) para jogar com amigos no celular e no PC, em um único a
 - Na tela inicial cada jogador escolhe uma fantasia (Pirata, Astronauta, Vampiro, Unicórnio, Ninja, Chef, Realeza, Alien, Robô, Dino, Mago, Abacaxi) e uma cor. Os bonecos são desenhados em SVG dentro do próprio arquivo, sem imagens externas. A escolha fica salva no aparelho.
 - A sala de espera mostra todo mundo sentado numa mesa redonda. Sozinho, aparece uma cadeira "convide!".
 - Na revelação, a mesa gira para trazer à frente quem está "falando", e a resposta aparece no centro da mesa.
+
+## Chat
+
+- Balão flutuante no canto inferior direito, em todas as telas depois da entrada. Toque abre um painel pequeno, que não cobre o jogo; o X fecha.
+- Mensagem nova com o painel fechado: contador no balão e um aviso curto com o texto por 3,5 segundos. Toque no aviso abre o chat.
+- As mensagens passam pelo anfitrião e chegam a todos. Sem histórico para quem entra depois.
 
 ## Regras
 

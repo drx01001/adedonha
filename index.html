@@ -4,7 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#14152a">
-<title>Adedonha dos Amigos</title>
+<title>Contemplados</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect x='4' y='10' width='56' height='50' rx='12' fill='%237c83ff'/%3E%3Ctext x='32' y='50' text-anchor='middle' font-family='Arial Rounded MT Bold,Arial' font-weight='700' font-size='38' fill='%23fff'%3EC%3C/text%3E%3Cpolygon points='48,2 52,10 61,10 54,16 56,25 48,20 40,25 42,16 35,10 44,10' fill='%23fbbf24'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;700&family=Nunito:wght@400;600;800&display=swap">
 <style>
@@ -41,8 +42,12 @@ label{display:block;font-size:.85rem;color:var(--muted);font-weight:600;margin-b
 .row{display:flex;gap:.8rem;flex-wrap:wrap;align-items:center}
 .muted{color:var(--muted)}
 .small{font-size:.85rem}
-.logo{display:flex;align-items:center;gap:.8rem}
-.logo .j{width:52px;height:52px;border-radius:14px;background:linear-gradient(135deg,var(--accent),#c56bff);display:grid;place-items:center;font-family:var(--display);font-weight:700;font-size:1.8rem;color:#fff}
+.hero{background:radial-gradient(ellipse at 30% 0%,#2e3070,var(--card) 60%);border-radius:22px;padding:1.4rem 1.2rem 1.2rem;display:flex;align-items:center;gap:1rem;flex-wrap:wrap}
+.hero .marca{width:92px;height:92px;flex:none;filter:drop-shadow(0 8px 20px rgba(124,131,255,.45))}
+.hero h1{font-size:2.6rem;letter-spacing:-.01em;background:linear-gradient(90deg,#fff,#c9cbff);-webkit-background-clip:text;background-clip:text;color:transparent}
+.hero .sub{color:var(--muted);font-weight:600}
+.hero .tag{display:inline-block;margin-top:.4rem;font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;color:var(--warn);font-weight:800}
+@media (max-width:420px){.hero h1{font-size:2.1rem}.hero .marca{width:72px;height:72px}}
 .comment{background:var(--bg2);border-left:4px solid var(--warn);border-radius:10px;padding:.7rem .9rem;font-style:italic;color:#e9e3c8}
 .players{display:flex;flex-wrap:wrap;gap:.5rem}
 .chip{background:var(--bg2);border:1px solid var(--line);border-radius:999px;padding:.35rem .8rem;font-weight:600;display:inline-flex;align-items:center;gap:.4rem}
@@ -134,6 +139,24 @@ td.n{text-align:right}
 .assento.vazio .av{opacity:.25}
 @media (prefers-reduced-motion:reduce){.assentos,.assento .up,.tampo .t2{transition:none;animation:none}}
 .rank .av{width:40px;height:44px}
+/* Chat */
+.balao{position:fixed;right:calc(14px + env(safe-area-inset-right,0px));bottom:calc(14px + env(safe-area-inset-bottom,0px));width:52px;height:52px;border-radius:50%;background:var(--accent);box-shadow:0 6px 20px rgba(0,0,0,.4);display:grid;place-items:center;padding:0;z-index:30}
+.balao svg{width:26px;height:26px}
+.balao .badge{position:absolute;top:-4px;right:-4px;min-width:20px;height:20px;border-radius:999px;background:var(--stop);color:#fff;font-size:.72rem;font-weight:800;display:grid;place-items:center;padding:0 5px;border:2px solid var(--bg)}
+.chat{position:fixed;right:calc(14px + env(safe-area-inset-right,0px));bottom:calc(74px + env(safe-area-inset-bottom,0px));width:min(320px,calc(100vw - 28px));max-height:min(55vh,420px);background:var(--card);border:1px solid var(--line);border-radius:16px;box-shadow:0 12px 40px rgba(0,0,0,.5);display:flex;flex-direction:column;z-index:30;overflow:hidden}
+.chat header{display:flex;align-items:center;justify-content:space-between;padding:.5rem .6rem .5rem .9rem;background:var(--bg2);font-weight:800;font-size:.9rem}
+.chat header button{background:transparent;padding:.2rem .5rem;font-size:1.1rem;line-height:1;color:var(--muted)}
+.chat .msgs{flex:1;overflow-y:auto;padding:.6rem .8rem;display:flex;flex-direction:column;gap:.35rem;font-size:.88rem;min-height:120px}
+.chat .m{background:var(--bg2);border-radius:10px;padding:.35rem .6rem;max-width:90%;align-self:flex-start;word-break:break-word}
+.chat .m.eu{align-self:flex-end;background:var(--accent2)}
+.chat .m .q{font-size:.7rem;color:var(--muted);font-weight:800;display:block}
+.chat .m.eu .q{color:#dfe0ff}
+.chat .m.sys{align-self:center;background:transparent;color:var(--muted);font-size:.78rem;font-style:italic}
+.chat form{display:flex;gap:.4rem;padding:.5rem;border-top:1px solid var(--line)}
+.chat form input{padding:.5rem .7rem;border-radius:10px}
+.chat form button{padding:.5rem .8rem;border-radius:10px}
+.previa{position:fixed;right:calc(74px + env(safe-area-inset-right,0px));bottom:calc(22px + env(safe-area-inset-bottom,0px));max-width:min(260px,calc(100vw - 110px));background:var(--card);border:1px solid var(--line);border-radius:12px 12px 2px 12px;padding:.45rem .7rem;font-size:.85rem;box-shadow:0 6px 20px rgba(0,0,0,.4);z-index:29;animation:entra .25s ease-out;word-break:break-word}
+.previa b{color:var(--warn);display:block;font-size:.72rem}
 .toast{position:fixed;left:50%;bottom:calc(90px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:#000c;color:#fff;padding:.6rem 1rem;border-radius:10px;font-weight:600;z-index:20;max-width:90vw;text-align:center}
 .err{background:#3b1d24;border:1px solid var(--bad);border-radius:12px;padding:.8rem 1rem}
 [hidden]{display:none!important}
@@ -144,7 +167,20 @@ td.n{text-align:right}
 
   <!-- INÍCIO -->
   <section id="tela-inicio" class="card">
-    <div class="logo"><div class="j">J</div><div><h1>Adedonha</h1><p class="muted">Stop com os amigos, no celular ou no PC.</p></div></div>
+    <div class="hero">
+      <svg class="marca" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <rect x="8" y="18" width="76" height="76" rx="18" fill="#7c83ff"/>
+        <rect x="8" y="18" width="76" height="76" rx="18" fill="url(#brilho)"/>
+        <defs><linearGradient id="brilho" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".25"/><stop offset="1" stop-color="#000" stop-opacity=".15"/></linearGradient></defs>
+        <text x="46" y="78" text-anchor="middle" font-family="Fredoka, Nunito, sans-serif" font-weight="700" font-size="54" fill="#fff">C</text>
+        <polygon points="78,2 84,16 99,16 87,25 92,40 78,31 64,40 69,25 57,16 72,16" fill="#fbbf24" stroke="#14152a" stroke-width="3" stroke-linejoin="round"/>
+      </svg>
+      <div style="flex:1;min-width:180px">
+        <h1>Contemplados</h1>
+        <p class="sub">Adedonha em grupo, no celular ou no PC.</p>
+        <span class="tag">Quem acerta, leva</span>
+      </div>
+    </div>
     <div id="convite" class="comment" hidden></div>
     <div>
       <label for="nome">Seu nome</label>
@@ -179,7 +215,7 @@ td.n{text-align:right}
   <section id="tela-lobby" hidden>
     <div class="card">
       <div class="row" style="justify-content:space-between">
-        <h2>Sala <span id="lobby-codigo"></span></h2>
+        <h2><span id="lobby-nome">Sala</span> <span class="muted small" style="font-family:var(--body);font-weight:600">· código <span id="lobby-codigo"></span></span></h2>
         <span class="chip" id="lobby-eu"></span>
       </div>
       <div id="lobby-comentario" class="comment"></div>
@@ -204,7 +240,7 @@ td.n{text-align:right}
         <div>
           <label for="cfg-tempo">Tempo por rodada</label>
           <select id="cfg-tempo">
-            <option value="0">Sem tempo (até alguém dar STOP)</option>
+            <option value="0">Sem tempo (até darem STOP)</option>
             <option value="60">1 minuto</option>
             <option value="120" selected>2 minutos</option>
             <option value="180">3 minutos</option>
@@ -212,7 +248,7 @@ td.n{text-align:right}
           </select>
         </div>
         <div>
-          <label for="cfg-rodadas">Rodadas</label>
+          <label for="cfg-rodadas">Assembleias (rodadas)</label>
           <select id="cfg-rodadas"></select>
         </div>
         <div>
@@ -251,7 +287,7 @@ td.n{text-align:right}
     <div class="topbar">
       <div class="row" style="gap:.8rem">
         <div class="letter" id="rd-letra">?</div>
-        <div><div style="font-weight:800">Rodada <span id="rd-num"></span></div><div class="muted small"><span id="rd-progresso">0</span> de <span id="rd-total">20</span> preenchidas</div></div>
+        <div><div style="font-weight:800">Assembleia <span id="rd-num"></span></div><div class="muted small"><span id="rd-progresso">0</span> de <span id="rd-total">20</span> preenchidas</div></div>
       </div>
       <div class="timer" id="rd-timer">—</div>
     </div>
@@ -268,7 +304,7 @@ td.n{text-align:right}
   <section id="tela-conferencia" hidden>
     <div class="card">
       <div class="row" style="justify-content:space-between">
-        <h2>Rodada <span id="cf-num"></span> · letra <span id="cf-letra"></span></h2>
+        <h2>Assembleia <span id="cf-num"></span> · letra <span id="cf-letra"></span></h2>
       </div>
       <div class="mesa" id="cf-mesa"></div>
       <div id="cf-comentario" class="comment"></div>
@@ -291,11 +327,11 @@ td.n{text-align:right}
   <!-- FINAL -->
   <section id="tela-final" hidden>
     <div class="card">
-      <h2>Fim de jogo!</h2>
+      <h2>Encerrou a última assembleia!</h2>
       <div id="fn-comentario" class="comment"></div>
       <div class="rank" id="fn-rank"></div>
       <details>
-        <summary>Pontos por rodada</summary>
+        <summary>Pontos por assembleia</summary>
         <div class="tablewrap" style="margin-top:.6rem"><table id="fn-tabela"></table></div>
       </details>
       <div class="row">
@@ -308,6 +344,17 @@ td.n{text-align:right}
   <div id="desconectado" class="card err" hidden></div>
 </div>
 <div id="toast" class="toast" hidden></div>
+
+<button id="balao" class="balao" hidden aria-label="Abrir chat">
+  <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-8 8H8l-5 3 1.2-4.2A8 8 0 1 1 21 12z"/></svg>
+  <span class="badge" id="balao-badge" hidden>0</span>
+</button>
+<div id="chat" class="chat" hidden>
+  <header><span>Chat da mesa</span><button type="button" id="chat-fechar" aria-label="Fechar chat">✕</button></header>
+  <div class="msgs" id="chat-msgs"><div class="m sys">Fala baixo que a rodada tá rolando.</div></div>
+  <form id="chat-form"><input type="text" id="chat-texto" maxlength="200" placeholder="Escreva algo…" autocomplete="off"><button type="submit">Enviar</button></form>
+</div>
+<div id="previa" class="previa" hidden></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.5.4/peerjs.min.js"></script>
 <script>
@@ -376,6 +423,7 @@ const FRASES = {
     'Tudo preenchido por todo mundo. Vou fingir que acredito.',
   ],
   final: [
+    '{N} foi contemplado! Sem lance, sem sorteio: só na palavra.',
     '{N} venceu. Suspeito de dicionário escondido na gaveta.',
     '{N} ganhou e agora vai ficar insuportável a semana toda.',
     '{N} levou. Os outros podem alegar que o celular travou.',
@@ -384,7 +432,7 @@ const FRASES = {
     '{N} ficou em último. Mas participou, e isso é lindo.',
     '{N} fechou a lista. Alguém tinha que fazer isso.',
   ],
-  titulos: ['Mestre das letras','Rei do STOP','Pensou rápido demais','Especialista em branco','Chutou com confiança','Quase lá','Participou com carinho','Vocabulário de bolso','Gênio incompreendido','Vitória moral'],
+  titulos: ['Contemplado da noite','Rei do STOP','Lance vencedor','Cota premiada','Pensou rápido demais','Especialista em branco','Chutou com confiança','Quase lá','Participou com carinho','Vocabulário de bolso','Gênio incompreendido','Vitória moral'],
 };
 const sortear = (lista) => lista[Math.floor(Math.random() * lista.length)];
 const frase = (tipo, vars = {}) => sortear(FRASES[tipo]).replace(/\{(\w)\}/g, (_, k) => vars[k] ?? '');
@@ -515,11 +563,11 @@ function renderMesa(id, ativo, centro) {
 }
 window.addEventListener('resize', () => { if (estado) renderizar(); });
 $('cfg-categorias').value = CATEGORIAS_PADRAO.join('\n');
-for (let i = 1; i <= LETRAS.length; i++) { const o = document.createElement('option'); o.value = i; o.textContent = i + (i === 1 ? ' rodada' : ' rodadas'); if (i === 5) o.selected = true; $('cfg-rodadas').appendChild(o); }
+for (let i = 1; i <= LETRAS.length; i++) { const o = document.createElement('option'); o.value = i; o.textContent = i + (i === 1 ? ' assembleia' : ' assembleias'); if (i === 5) o.selected = true; $('cfg-rodadas').appendChild(o); }
 
 if (urlSala) {
   $('convite').hidden = false;
-  $('convite').textContent = 'Você foi convidado para a sala ' + urlSala.toUpperCase() + '. Diga seu nome e entre.';
+  $('convite').textContent = 'Você foi convidado para a mesa ' + urlSala.toUpperCase() + '. Diga seu nome, escolha a fantasia e entre.';
   $('btn-entrar').hidden = false;
   $('btn-criar').classList.add('ghost');
   $('entrar-codigo').hidden = true;
@@ -554,6 +602,8 @@ function criarSala(nome, tentativa) {
   peer.on('open', (id) => {
     souHost = true; meuId = id; meuNome = nome;
     estado = estadoInicial(codigo);
+    let n = 1; try { n = Number(localStorage.getItem('adedonha-salas') || 0) + 1; localStorage.setItem('adedonha-salas', String(n)); } catch (e) {}
+    estado.nomeSala = 'Sala ' + n;
     estado.jogadores.push({ id: meuId, nome, conectado: true, av: validarAvatar(meuAvatar) });
     peer.on('connection', (c) => aceitarConexao(c));
     renderizar();
@@ -633,7 +683,43 @@ function receberDoCliente(c, m) {
   }
   if (m.t === 'marcar' && estado.fase === 'conferencia' && m.rodada === estado.rodada) { alternarMarca(pid, m.alvo, m.cat); transmitir(); return; }
   if (m.t === 'pronto' && estado.fase === 'conferencia') { if (!estado.prontos.includes(pid)) estado.prontos.push(pid); transmitir(); return; }
+  if (m.t === 'chat') {
+    const texto = String(m.texto || '').trim().slice(0, 200); if (!texto) return;
+    const j = estado.jogadores.find(x => x.id === pid);
+    const msg = { de: pid, nome: j ? j.nome : 'Alguém', texto, ts: Date.now() };
+    for (const c of conns.values()) { try { c.send({ t: 'chatmsg', m: msg }); } catch (e) {} }
+    receberChat(msg);
+    return;
+  }
 }
+
+// ---------- Chat ----------
+let chatAberto = false, naoLidas = 0, previaTimer = null;
+function receberChat(msg) {
+  const box = $('chat-msgs');
+  const d = document.createElement('div'); d.className = 'm' + (msg.de === meuId ? ' eu' : '');
+  const q = document.createElement('span'); q.className = 'q'; q.textContent = msg.de === meuId ? 'você' : msg.nome;
+  d.appendChild(q); d.appendChild(document.createTextNode(msg.texto)); box.appendChild(d);
+  while (box.children.length > 80) box.removeChild(box.firstChild);
+  box.scrollTop = box.scrollHeight;
+  if (!chatAberto && msg.de !== meuId) {
+    naoLidas += 1; const b = $('balao-badge'); b.hidden = false; b.textContent = naoLidas > 9 ? '9+' : String(naoLidas);
+    const p = $('previa'); p.innerHTML = ''; const n = document.createElement('b'); n.textContent = msg.nome; p.appendChild(n); p.appendChild(document.createTextNode(msg.texto));
+    p.hidden = false; clearTimeout(previaTimer); previaTimer = setTimeout(() => { p.hidden = true; }, 3500);
+  }
+}
+function abrirChat(abrir) {
+  chatAberto = abrir; $('chat').hidden = !abrir;
+  if (abrir) { naoLidas = 0; $('balao-badge').hidden = true; $('previa').hidden = true; const box = $('chat-msgs'); box.scrollTop = box.scrollHeight; if (window.innerWidth > 700) $('chat-texto').focus(); }
+}
+$('balao').addEventListener('click', () => abrirChat(!chatAberto));
+$('chat-fechar').addEventListener('click', () => abrirChat(false));
+$('previa').addEventListener('click', () => abrirChat(true));
+$('chat-form').addEventListener('submit', (ev) => {
+  ev.preventDefault();
+  const inp = $('chat-texto'); const texto = inp.value.trim(); if (!texto) return;
+  enviarAoHost({ t: 'chat', texto }); inp.value = '';
+});
 function sanear(r) { const n = estado.categorias.length; const out = []; for (let i = 0; i < n; i++) out.push(String((r && r[i]) || '').slice(0, 40)); return out; }
 
 function transmitir() {
@@ -651,6 +737,7 @@ function receberDoHost(m) {
   if (m.t === 'tick') { restanteLocal = m.r; renderTimer(); return; }
   if (m.t === 'coletar') { enviarRespostas(true); return; }
   if (m.t === 'recusado') { desconectado(m.motivo); return; }
+  if (m.t === 'chatmsg' && m.m) { receberChat({ de: String(m.m.de || ''), nome: String(m.m.nome || 'Alguém').slice(0, 18), texto: String(m.m.texto || '').slice(0, 200) }); return; }
 }
 function enviarAoHost(m) {
   if (souHost) { receberDoCliente({ peer: meuId, send() {}, close() {} }, m); return; }
@@ -660,7 +747,7 @@ function enviarAoHost(m) {
 // ---------- Lógica da partida (anfitrião) ----------
 function estadoInicial(codigo) {
   return {
-    codigo, hostId: meuId, fase: 'lobby', jogadores: [],
+    codigo, nomeSala: 'Sala 1', hostId: meuId, fase: 'lobby', jogadores: [],
     config: { tempo: 120, rodadas: 5, stop: 'cheio', stops: 2 },
     stops: [],
     categorias: CATEGORIAS_PADRAO.slice(),
@@ -833,7 +920,7 @@ function finalizarJogo() {
     : frase('final', { N: ordem[0].nome }) + (ordem.length > 1 ? ' ' + frase('ultimo', { N: ordem[ordem.length - 1].nome }) : '');
   estado.titulos = {};
   const titulos = FRASES.titulos.slice();
-  ordem.forEach((j, i) => { estado.titulos[j.id] = i === 0 ? 'Mestre das letras' : titulos.splice(1 + Math.floor(Math.random() * (titulos.length - 1)), 1)[0]; });
+  ordem.forEach((j, i) => { estado.titulos[j.id] = i === 0 ? 'Contemplado da noite' : titulos.splice(1 + Math.floor(Math.random() * (titulos.length - 1)), 1)[0]; });
   transmitir();
 }
 
@@ -876,13 +963,14 @@ $('btn-copiar').addEventListener('click', async () => {
   catch (e) { $('link').select(); toast('Segure e copie o link.'); }
 });
 $('btn-compartilhar').addEventListener('click', async () => {
-  try { await navigator.share({ title: 'Adedonha', text: 'Bora jogar adedonha? Entra na sala ' + estado.codigo + ':', url: $('link').value }); } catch (e) {}
+  try { await navigator.share({ title: 'Contemplados', text: 'Bora jogar Contemplados (adedonha)? Entra na ' + (estado.nomeSala || 'sala') + ', código ' + estado.codigo + ':', url: $('link').value }); } catch (e) {}
 });
 
 // ---------- Renderização ----------
 function renderizar() {
   if (!estado) return;
   $('desconectado').hidden = true;
+  $('balao').hidden = false;
   const f = estado.fase;
   if (f === 'lobby') renderLobby();
   else if (f === 'rodada' || f === 'coletando') renderRodada();
@@ -902,9 +990,10 @@ function chipJogador(j, extra) {
 function renderLobby() {
   if (telaAtual !== 'lobby') { mostrar('tela-lobby'); telaAtual = 'lobby'; }
   $('lobby-codigo').textContent = estado.codigo;
+  $('lobby-nome').textContent = estado.nomeSala || 'Sala';
   $('lobby-eu').textContent = meuNome;
   $('lobby-comentario').textContent = estado.comentario;
-  renderMesa('lobby-mesa', -1, { t1: 'Sala', t2: estado.codigo, t3: estado.jogadores.length + ' na mesa', frente: estado.jogadores.findIndex(j => j.id === meuId) });
+  renderMesa('lobby-mesa', -1, { t1: estado.nomeSala || 'Sala', t2: estado.codigo, t3: estado.jogadores.length + ' na mesa', frente: estado.jogadores.findIndex(j => j.id === meuId) });
   const lj = $('lobby-jogadores'); lj.innerHTML = '';
   estado.jogadores.forEach(j => lj.appendChild(chipJogador(j)));
   const link = location.origin + location.pathname + '?sala=' + estado.codigo;
@@ -1066,12 +1155,12 @@ function renderFinal() {
     r.appendChild(pos); r.appendChild(nome); r.appendChild(pts); rank.appendChild(r);
   });
   const tb = $('fn-tabela'); tb.innerHTML = '';
-  const thead = document.createElement('tr'); thead.appendChild(Object.assign(document.createElement('th'), { textContent: 'Rodada' }));
+  const thead = document.createElement('tr'); thead.appendChild(Object.assign(document.createElement('th'), { textContent: 'Assembleia' }));
   ordem.forEach(j => thead.appendChild(Object.assign(document.createElement('th'), { textContent: j.nome })));
   tb.appendChild(thead);
   estado.historico.forEach(h => {
     const tr = document.createElement('tr');
-    tr.appendChild(Object.assign(document.createElement('td'), { textContent: h.rodada + ' · ' + h.letra }));
+    tr.appendChild(Object.assign(document.createElement('td'), { textContent: 'Assembleia ' + h.rodada + ' · ' + h.letra }));
     ordem.forEach(j => { const td = document.createElement('td'); td.className = 'n'; td.textContent = h.pontos[j.id] ?? 0; tr.appendChild(td); });
     tb.appendChild(tr);
   });
