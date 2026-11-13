@@ -157,6 +157,9 @@ td.n{text-align:right}
 .linha.agora{background:#2a2c55;border-color:var(--warn)}
 .pill{font-weight:800;font-size:.8rem;padding:.2rem .6rem;border-radius:999px;white-space:nowrap}
 .pill.grande{font-family:var(--display);font-size:1rem;min-width:3.2rem;text-align:center;padding:.25rem .6rem}
+.ajuste{margin-top:.6rem;padding:.6rem .7rem;border-radius:12px;background:var(--card);border:1px solid var(--warn);display:flex;flex-direction:column;gap:.5rem}
+button.pill{border:2px solid transparent;cursor:pointer}
+button.pill.marcado{border-color:#fff}
 .linha .mot{font-weight:800}
 .linha .mot.cheio{color:var(--ok)}
 .linha .mot.meio{color:var(--warn)}
@@ -370,7 +373,7 @@ body.estourou .wrap{animation:chacoalha .5s 1.4s}
       <div class="regra"><span><b class="pill cheio">+10</b> ninguém repetiu</span><span><b class="pill meio">+5</b> repetida</span><span><b class="pill zero">0</b> em branco ou letra errada</span></div>
       <div id="cf-comentario" class="comment"></div>
       <div id="cf-resumo" hidden>
-        <p class="muted small" style="margin-bottom:.6rem">Tudo conferido. Achou uma resposta que não vale? Toque nela para anular. Vale a maioria.</p>
+        <p class="muted small" style="margin-bottom:.6rem">Tudo conferido. Discordou de algum ponto? Toque na resposta e escolha 0, 5 ou 10.</p>
         <div class="review" id="cf-lista"></div>
         <div class="row" style="justify-content:space-between;margin-top:1rem">
           <div class="players" id="cf-prontos"></div>
@@ -767,6 +770,13 @@ function receberDoCliente(c, m) {
     return;
   }
   if (m.t === 'marcar' && estado.fase === 'conferencia' && m.rodada === estado.rodada) { alternarMarca(pid, m.alvo, m.cat); transmitir(); return; }
+  if (m.t === 'ajustar' && estado.fase === 'conferencia' && estado.rev && estado.rev.fim && m.rodada === estado.rodada
+      && estado.jogadores.some(j => j.id === m.alvo) && Number.isInteger(m.cat) && m.cat >= 0 && m.cat < estado.categorias.length) {
+    estado.ajustes = estado.ajustes || {};
+    const k = m.alvo + ':' + m.cat;
+    if ([0, 5, 10].includes(m.p)) estado.ajustes[k] = { p: m.p, por: pid }; else delete estado.ajustes[k];
+    transmitir(); return;
+  }
   if (m.t === 'pronto' && estado.fase === 'conferencia') { if (!estado.prontos.includes(pid)) estado.prontos.push(pid); transmitir(); return; }
   if (m.t === 'chat') {
     const texto = String(m.texto || '').trim().slice(0, 200); if (!texto) return;
@@ -864,7 +874,7 @@ function iniciarRodada() {
   estado.letra = sortear(disponiveis);
   estado.letrasUsadas.push(estado.letra);
   estado.fase = 'rodada';
-  estado.respostas = {}; estado.marcas = {}; estado.prontos = []; estado.paradoPor = null; estado.porTempo = false; estado.stops = [];
+  estado.respostas = {}; estado.marcas = {}; estado.ajustes = {}; estado.prontos = []; estado.paradoPor = null; estado.porTempo = false; estado.stops = [];
   estado.comentario = frase('letra', { L: estado.letra });
   restanteLocal = estado.config.tempo || null;
   clearInterval(tickTimer);
@@ -909,6 +919,7 @@ function sequenciaRev(e) {
   return seq;
 }
 let revTimer = null;
+let editando = null; // resposta aberta no painel de ajuste de pontos (só nesta tela)
 function agendarRev(ms) { clearTimeout(revTimer); revTimer = setTimeout(avancarRev, ms); }
 // A revelação roda sozinha: cada resposta aparece no centro da mesa, a mesa gira para o próximo
 function avancarRev() {
@@ -948,28 +959,68 @@ $('btn-pular').addEventListener('click', () => { if (souHost && estado.rev && !e
 $('btn-pular-um').addEventListener('click', pularRev);
 $('btn-voltar').addEventListener('click', voltarRev);
 
-function pontosResposta(pid, ci, e = estado) {
+// ---------- Respostas parecidas contam como iguais ----------
+// "Coca-Cola" = "coca cola" = "Cocacola"; "Bananas" = "Banana"; "Feijão" = "feijao"; "Carrro" = "Carro";
+// e um erro de digitação em palavras de 5+ letras ("Girrafa" = "Girafa"; dois erros a partir de 9 letras).
+function chaveEscrita(s) {
+  let k = normalizar(s).replace(/[^a-z0-9]/g, '');           // sem acento, maiúscula, espaço, hífen ou pontuação
+  k = k.replace(/(.)\1+/g, '$1');                             // letras dobradas: "carrro" = "caro"
+  // plural: "animais" = "animal", "mamões" = "mamão", "bombons" = "bombom", "uvas" = "uva"
+  if (k.length > 5 && /(oes|aes|ais|eis|ois|ns)$/.test(k)) k = k.replace(/(oes|aes|ais|eis|ois|ns)$/, (m) => ({ oes: 'ao', aes: 'ao', ais: 'al', eis: 'el', ois: 'ol', ns: 'm' })[m]);
+  else if (k.length > 3) k = k.replace(/(es|s)$/, '');
+  return k;
+}
+function distancia(a, b) {
+  if (Math.abs(a.length - b.length) > 2) return 3;
+  let ant = Array.from({ length: b.length + 1 }, (_, i) => i);
+  for (let i = 1; i <= a.length; i++) {
+    const cur = [i];
+    for (let j = 1; j <= b.length; j++) cur[j] = Math.min(ant[j] + 1, cur[j - 1] + 1, ant[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+    ant = cur;
+  }
+  return ant[b.length];
+}
+function parecidas(x, y) {
+  const a = chaveEscrita(x), b = chaveEscrita(y);
+  if (!a || !b) return false;
+  if (a === b) return true;
+  const menor = Math.min(a.length, b.length);
+  const tolerancia = menor >= 9 ? 2 : menor >= 5 ? 1 : 0;
+  // começo e fim iguais: evita juntar "Maria" com "Mario" ou "Paulo" com "Paula"
+  if (a[0] !== b[0] || a[a.length - 1] !== b[b.length - 1]) return false;
+  return tolerancia > 0 && distancia(a, b) <= tolerancia;
+}
+function pontosAuto(pid, ci, e = estado) {
   if (respostaInvalida(pid, ci, e)) return 0;
-  const v = normalizar(e.respostas[pid][ci]);
-  const rep = e.jogadores.filter(j => !respostaInvalida(j.id, ci, e) && normalizar(e.respostas[j.id][ci]) === v).length;
-  return rep > 1 ? 5 : 10;
+  const v = e.respostas[pid][ci];
+  const iguais = e.jogadores.filter(j => j.id !== pid && !respostaInvalida(j.id, ci, e) && parecidas(e.respostas[j.id][ci], v));
+  return iguais.length ? 5 : 10;
+}
+function ajusteDe(pid, ci, e = estado) { return (e.ajustes || {})[pid + ':' + ci]; }
+function pontosResposta(pid, ci, e = estado) {
+  const aj = ajusteDe(pid, ci, e);
+  return aj ? aj.p : pontosAuto(pid, ci, e);
 }
 // Pontos de uma resposta com o motivo, para mostrar de forma clara
 function infoPontos(pid, ci) {
+  const cls = (p) => p === 10 ? 'cheio' : p === 5 ? 'meio' : 'zero';
+  const aj = ajusteDe(pid, ci);
+  if (aj) { const quem = (estado.jogadores.find(j => j.id === aj.por) || {}).nome; return { p: aj.p, motivo: 'ajustado' + (quem ? ' por ' + quem : ''), cls: cls(aj.p), ajustado: true }; }
   const inv = respostaInvalida(pid, ci);
   if (inv === 'branco') return { p: 0, motivo: 'em branco', cls: 'zero' };
   if (inv === 'letra') return { p: 0, motivo: 'letra errada', cls: 'zero' };
   if (inv === 'marcada') return { p: 0, motivo: 'anulada', cls: 'zero' };
-  const p = pontosResposta(pid, ci);
-  return p === 5 ? { p, motivo: 'repetida', cls: 'meio' } : { p, motivo: 'única', cls: 'cheio' };
+  const p = pontosAuto(pid, ci);
+  if (p === 10) return { p, motivo: 'única', cls: 'cheio' };
+  const v = estado.respostas[pid][ci];
+  const exata = estado.jogadores.some(j => j.id !== pid && !respostaInvalida(j.id, ci) && chaveEscrita(estado.respostas[j.id][ci]) === chaveEscrita(v));
+  return { p, motivo: exata ? 'repetida' : 'parecida', cls: 'meio' };
 }
 function comentarioCategoria(ci) {
   const cat = estado.categorias[ci];
   const validos = estado.jogadores.filter(j => !respostaInvalida(j.id, ci));
   if (!validos.length) return frase('catVazia', { C: cat });
-  const grupos = {};
-  for (const j of validos) { const v = normalizar(estado.respostas[j.id][ci]); (grupos[v] = grupos[v] || []).push(j); }
-  const rep = Object.values(grupos).find(g => g.length > 1);
+  const rep = validos.map(j => validos.filter(o => parecidas(estado.respostas[o.id][ci], estado.respostas[j.id][ci]))).find(g => g.length > 1);
   if (rep) return frase('catRepetida', { A: rep.map(j => j.nome).join(' e '), C: cat, R: estado.respostas[rep[0].id][ci] });
   return frase('catUnica', { C: cat });
 }
@@ -1011,7 +1062,7 @@ function pontuarRodada() {
   const pontos = {};
   for (const j of estado.jogadores) pontos[j.id] = 0;
   for (let ci = 0; ci < estado.categorias.length; ci++) for (const j of estado.jogadores) pontos[j.id] += pontosResposta(j.id, ci);
-  estado.historico.push({ rodada: estado.rodada, letra: estado.letra, pontos, respostas: estado.respostas, marcas: estado.marcas, paradoPor: estado.paradoPor });
+  estado.historico.push({ rodada: estado.rodada, letra: estado.letra, pontos, respostas: estado.respostas, marcas: estado.marcas, ajustes: estado.ajustes, paradoPor: estado.paradoPor });
 }
 
 $('btn-proxima').addEventListener('click', () => {
@@ -1256,30 +1307,50 @@ function renderConferencia() {
     });
   }
 
-  // Resumo completo: só depois que tudo foi revelado (aí dá para anular respostas)
+  // Resumo completo: só depois que tudo foi revelado. Tocar numa resposta abre o ajuste 0 / 5 / 10.
   $('cf-resumo').hidden = !rev.fim;
   const lista = $('cf-lista'); lista.innerHTML = '';
+  if (!rev.fim) editando = null;
   if (rev.fim) estado.categorias.forEach((cat, ci) => {
     const box = document.createElement('div'); box.className = 'cat';
     const h = document.createElement('h3'); h.textContent = cat; box.appendChild(h);
     const ans = document.createElement('div'); ans.className = 'ans';
     estado.jogadores.forEach((j) => {
       const r = ((estado.respostas[j.id] || [])[ci] || '').trim();
-      const inval = respostaInvalida(j.id, ci);
       const info = infoPontos(j.id, ci);
       const b = document.createElement('button'); b.type = 'button';
-      b.className = (r ? '' : 'blank ') + (inval === 'letra' ? 'wrong ' : '') + (inval === 'marcada' ? 'flagged ' : '') + (j.id === meuId ? 'mine' : '');
+      const aberto = editando && editando.pid === j.id && editando.ci === ci;
+      b.className = (r ? '' : 'blank ') + (info.motivo === 'letra errada' ? 'wrong ' : '') + (j.id === meuId ? 'mine ' : '') + (aberto ? 'revelando' : '');
       const who = document.createElement('span'); who.className = 'who'; who.textContent = j.nome + ':';
       b.appendChild(who); b.appendChild(document.createTextNode(r || 'em branco'));
-      const marcas = (estado.marcas[j.id + ':' + ci] || []).length;
-      if (marcas) { const f = document.createElement('span'); f.className = 'flags'; f.textContent = marcas + '✕'; b.appendChild(f); }
-      const s = document.createElement('span'); s.className = 'pill ' + info.cls; s.textContent = info.p ? '+' + info.p : '0'; b.appendChild(s);
-      b.title = info.motivo + (j.id === meuId ? ' · sua resposta' : r && inval !== 'letra' ? ' · toque para anular' : '');
-      b.disabled = j.id === meuId || !r || inval === 'letra';
-      b.addEventListener('click', () => enviarAoHost({ t: 'marcar', rodada: estado.rodada, alvo: j.id, cat: ci }));
+      const s = document.createElement('span'); s.className = 'pill ' + info.cls; s.textContent = (info.p ? '+' + info.p : '0') + (info.ajustado ? ' ✎' : ''); b.appendChild(s);
+      b.title = info.motivo + ' · toque para ajustar';
+      b.addEventListener('click', () => { editando = aberto ? null : { pid: j.id, ci }; renderConferencia(); });
       ans.appendChild(b);
     });
-    box.appendChild(ans); lista.appendChild(box);
+    box.appendChild(ans);
+    // Painel de ajuste da resposta escolhida
+    if (editando && editando.ci === ci && estado.jogadores.some(j => j.id === editando.pid)) {
+      const alvo = estado.jogadores.find(j => j.id === editando.pid);
+      const info = infoPontos(alvo.id, ci);
+      const painel = document.createElement('div'); painel.className = 'ajuste';
+      const t = document.createElement('div'); t.className = 'small'; t.textContent = 'Pontos de ' + alvo.nome + ' em ' + cat + ' (agora: ' + (info.p ? '+' + info.p : '0') + ', ' + info.motivo + ')';
+      painel.appendChild(t);
+      const bts = document.createElement('div'); bts.className = 'row'; bts.style.gap = '.4rem';
+      const atualAj = ajusteDe(alvo.id, ci);
+      [[0, 'zero'], [5, 'meio'], [10, 'cheio']].forEach(([p, c]) => {
+        const bt = document.createElement('button'); bt.type = 'button'; bt.className = 'pill grande ' + c + (atualAj && atualAj.p === p ? ' marcado' : '');
+        bt.textContent = p ? '+' + p : '0';
+        bt.addEventListener('click', () => { editando = null; enviarAoHost({ t: 'ajustar', rodada: estado.rodada, alvo: alvo.id, cat: ci, p }); renderConferencia(); });
+        bts.appendChild(bt);
+      });
+      const auto = document.createElement('button'); auto.type = 'button'; auto.className = 'ghost small'; auto.textContent = 'Automático';
+      auto.disabled = !atualAj;
+      auto.addEventListener('click', () => { editando = null; enviarAoHost({ t: 'ajustar', rodada: estado.rodada, alvo: alvo.id, cat: ci, p: null }); renderConferencia(); });
+      bts.appendChild(auto);
+      painel.appendChild(bts); box.appendChild(painel);
+    }
+    lista.appendChild(box);
   });
 
   const pr = $('cf-prontos'); pr.innerHTML = '';
